@@ -51,7 +51,7 @@ export interface StakesWeights {
 }
 
 export interface MomentsConfig {
-  /** Seconds of video before the trigger. Default 45, clamped to 30..90. */
+  /** Seconds of video before the trigger. Default 10, clamped to 5..90. */
   preRollS: number;
   /** Seconds after the last event of the cluster. Default 10. */
   postRollS: number;
@@ -72,7 +72,7 @@ export interface MomentsConfig {
 }
 
 export const DEFAULT_MOMENTS_CONFIG: MomentsConfig = {
-  preRollS: 45,
+  preRollS: 10,
   postRollS: 10,
   clusterGapS: 15,
   teamfightKills: 3,
@@ -112,7 +112,7 @@ export const DEFAULT_MOMENTS_CONFIG: MomentsConfig = {
   },
 };
 
-export const PRE_ROLL_MIN_S = 30;
+export const PRE_ROLL_MIN_S = 5;
 export const PRE_ROLL_MAX_S = 90;
 
 export function resolveMomentsConfig(partial: Partial<MomentsConfig> = {}): MomentsConfig {

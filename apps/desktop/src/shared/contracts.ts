@@ -217,7 +217,7 @@ export interface Settings {
   bitratePreset: BitratePreset;
   /** queueIds enabled for recording. */
   queues: number[];
-  /** Seconds of pre-roll before a moment's trigger (30-90). */
+  /** Seconds of video before a moment's trigger when jumping to it (5-90). */
   preRollS: number;
   autostart: boolean;
   minimizeToTray: boolean;
@@ -228,7 +228,7 @@ export const DEFAULT_SETTINGS: Settings = {
   quotaGb: 50,
   bitratePreset: '1080p60_12',
   queues: RECORDABLE_QUEUES.filter((q) => q.defaultOn).map((q) => q.id),
-  preRollS: 45,
+  preRollS: 10,
   autostart: false,
   minimizeToTray: true,
 };

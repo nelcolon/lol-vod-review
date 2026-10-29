@@ -42,9 +42,9 @@ export function SettingsView() {
           <span className="muted small">Oldest unpinned games are deleted first; clips and pinned games are exempt.</span>
         </label>
         <label className="row">
-          Pre-roll before a moment
+          Jump to this long before a moment
           <span className="inline">
-            <input type="range" min={30} max={90} step={5} value={settings.preRollS} onChange={(e) => void update({ preRollS: Number(e.target.value) })} />
+            <input type="range" min={5} max={90} step={1} value={settings.preRollS} onChange={(e) => void update({ preRollS: Number(e.target.value) })} />
             <span className="mono">{settings.preRollS} s</span>
           </span>
         </label>

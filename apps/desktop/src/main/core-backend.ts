@@ -392,7 +392,7 @@ export class CoreBackend implements Backend {
             me: { name: me.name, team: me.team },
             participants: players.map((p) => ({ name: p.name, team: p.team, champion: p.championName })),
             playerSnapshots: g.snapshots,
-            config: { preRollS: this.settings?.preRollS ?? 45 },
+            config: { preRollS: this.settings?.preRollS ?? 10 },
           });
           this.store.replaceMoments(rowId, moments);
           this.store.putTimeline(rowId, 'lvr_me', { name: me.name, team: me.team });
@@ -538,7 +538,7 @@ export class CoreBackend implements Backend {
       segments: detail.segments.map(mapSegment),
       events: events.map((e) => mapEvent(e, me)),
       moments: detail.moments
-        .map((m) => mapMoment(m, this.store.getTags(m.id), byEventId))
+        .map((m) => mapMoment(m, this.store.getTags(m.id), byEventId, this.settings?.preRollS ?? 10))
         .sort((a, b) => b.score - a.score),
       notes: detail.notes.map(mapNote),
       clips: detail.clips.map(mapClip),

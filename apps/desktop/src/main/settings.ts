@@ -51,7 +51,7 @@ export class SettingsStore {
 export function sanitize(s: Settings): Settings {
   const preset = s.bitratePreset in BITRATE_PRESETS ? s.bitratePreset : DEFAULT_SETTINGS.bitratePreset;
   const quota = Number.isFinite(s.quotaGb) ? Math.min(2000, Math.max(5, Math.round(s.quotaGb))) : DEFAULT_SETTINGS.quotaGb;
-  const preRoll = Number.isFinite(s.preRollS) ? Math.min(90, Math.max(30, Math.round(s.preRollS))) : DEFAULT_SETTINGS.preRollS;
+  const preRoll = Number.isFinite(s.preRollS) ? Math.min(90, Math.max(5, Math.round(s.preRollS))) : DEFAULT_SETTINGS.preRollS;
   const queues = Array.isArray(s.queues) ? [...new Set(s.queues.filter((q) => Number.isInteger(q)))] : DEFAULT_SETTINGS.queues;
   return {
     recordingEnabled: Boolean(s.recordingEnabled),

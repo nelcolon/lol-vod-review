@@ -163,16 +163,21 @@ function momentKind(m: MomentRow): MomentKind {
 
 const THEME: Record<string, Theme> = { deaths: 'deaths', objectives: 'objectives', kills: 'kills', team: 'teamfights' };
 
-/** Event row ids by Live Client EventID, to translate `event_ids`. */
-export function mapMoment(m: MomentRow, tags: string[], eventRowIdByEventId: Map<number, number>): Moment {
+/**
+ * `eventRowIdByEventId` translates Live Client EventIDs in `event_ids` to event row ids.
+ * The jump point is `preRollS` before the trigger, applied at read time so changing the
+ * setting also changes games recorded earlier.
+ */
+export function mapMoment(m: MomentRow, tags: string[], eventRowIdByEventId: Map<number, number>, preRollS: number): Moment {
+  const trigger = m.t_trigger_ms ?? 0;
   return {
     id: String(m.id),
     gameId: String(m.game_id),
     kind: momentKind(m),
     score: m.score,
     segmentId: m.segment_id === null ? '' : String(m.segment_id),
-    tStartMs: Math.max(0, m.t_start_ms ?? 0),
-    tTriggerMs: m.t_trigger_ms ?? 0,
+    tStartMs: Math.max(0, trigger - preRollS * 1000),
+    tTriggerMs: trigger,
     tEndMs: m.t_end_ms ?? 0,
     triggerGameTimeS: m.t_trigger_s,
     title: m.title,

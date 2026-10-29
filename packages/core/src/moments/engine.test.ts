@@ -133,7 +133,7 @@ describe('moments engine v1 — synthetic 25 min game', () => {
     expect(m.reasons.some((r) => r.startsWith('Team got a kill 2 s later'))).toBe(true);
     expect(m.reasons).toContain('5 kills within 15 s (teamfight)');
     expect(m.tTriggerS).toBe(1090);
-    expect(m.tStartS).toBe(1045); // 1090 − 45
+    expect(m.tStartS).toBe(1075); // cluster starts at 1080, minus 5 (earlier than 1090 − 10)
     expect(m.tEndS).toBe(1102); // last kill 1092 + 10
   });
 
@@ -178,7 +178,7 @@ describe('moments engine v1 — synthetic 25 min game', () => {
     const m = byTitle(compute(), 'Solo death, 11:42')!;
     expect(m.segmentId).toBe(7);
     expect(m.tTriggerMs).toBe(705_000); // 702 s + 3 s recorder lead
-    expect(m.tStartMs).toBe(660_000);
+    expect(m.tStartMs).toBe(695_000);
     expect(m.tEndMs).toBe(715_000);
     const noVideo = computeMoments({ events: normalizeEvents(script(), { gameId: 'g' }), me: ME, participants });
     expect(noVideo[0]!.segmentId).toBeNull();
@@ -255,8 +255,8 @@ describe('moments engine — specific rules', () => {
     const rows = normalizeEvents([kill(600, 'E1', 'Me')], { gameId: 'g' });
     const [wide] = computeMoments({ events: rows, me: ME, participants, config: { preRollS: 500 } });
     expect(wide!.tStartS).toBe(600 - 90);
-    const [narrow] = computeMoments({ events: rows, me: ME, participants, config: { preRollS: 5 } });
-    expect(narrow!.tStartS).toBe(600 - 30);
+    const [narrow] = computeMoments({ events: rows, me: ME, participants, config: { preRollS: 1 } });
+    expect(narrow!.tStartS).toBe(600 - 5);
     const [onlyStakes] = computeMoments({
       events: rows,
       me: ME,
@@ -265,7 +265,7 @@ describe('moments engine — specific rules', () => {
     });
     expect(onlyStakes!.score).toBe(DEFAULT_MOMENTS_CONFIG.stakes.kill);
     const cfg = resolveMomentsConfig({ laner: false });
-    expect(cfg.preRollS).toBe(45);
+    expect(cfg.preRollS).toBe(10);
     expect(cfg.laner).toBe(false);
     expect(cfg.weights).toEqual(DEFAULT_MOMENTS_CONFIG.weights);
   });
