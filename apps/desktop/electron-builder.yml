@@ -1,0 +1,30 @@
+# electron-builder configuration (NSIS installer). Config only for now — Phase 4 builds it.
+appId: com.divilight.lolvodreview
+productName: LoL VOD Review
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**
+  - package.json
+extraResources:
+  # LGPL FFmpeg sidecar (BtbN win64-lgpl). Never bundle libobs (GPL).
+  - from: ../../tools/bin/ffmpeg.exe
+    to: ffmpeg.exe
+  - from: ../../tools/bin/ffprobe.exe
+    to: ffprobe.exe
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: ${productName}-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  runAfterFinish: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: LoL VOD Review
+publish: null
