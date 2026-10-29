@@ -1,0 +1,15 @@
+[
+  {"id":"Turret_T2_L_03_A","kind":"turret","team":"CHAOS","lane":"top","laneToken":"L","position":"03_A","generation":"legacy"},
+  {"id":"Turret_T1_C_05_A","kind":"turret","team":"ORDER","lane":"mid","laneToken":"C","position":"05_A","generation":"legacy"},
+  {"id":"Turret_T2_R_03_A","kind":"turret","team":"CHAOS","lane":"bot","laneToken":"R","position":"03_A","generation":"legacy"},
+  {"id":"Barracks_T2_R1","kind":"inhibitor","team":"CHAOS","lane":"bot","laneToken":"R","position":"1","generation":"legacy"},
+  {"id":"Barracks_T1_C1","kind":"inhibitor","team":"ORDER","lane":"mid","laneToken":"C","position":"1","generation":"legacy"},
+  {"id":"Turret_T100_L2_P3_1509986696","kind":"turret","team":"ORDER","lane":"L2","laneToken":"L2","laneGuess":"bot","position":"P3","hash":"1509986696","generation":"2026-01"},
+  {"id":"Turret_T200_L0_P2_528623213","kind":"turret","team":"CHAOS","lane":"L0","laneToken":"L0","laneGuess":"top","position":"P2","hash":"528623213","generation":"2026-01"},
+  {"id":"Inhib_T200_L1_P1_1931666598","kind":"inhibitor","team":"CHAOS","lane":"L1","laneToken":"L1","laneGuess":"mid","position":"P1","hash":"1931666598","generation":"2026-01"},
+  {"id":"Turret_TChaos_L2_P3_2521511112","kind":"turret","team":"CHAOS","lane":"L2","laneToken":"L2","laneGuess":"bot","position":"P3","hash":"2521511112","generation":"2026-05"},
+  {"id":"Turret_TOrder_L0_P3_528623213","kind":"turret","team":"ORDER","lane":"L0","laneToken":"L0","laneGuess":"top","position":"P3","hash":"528623213","generation":"2026-05"},
+  {"id":"Inhib_TChaos_L1_P1_1931666598","kind":"inhibitor","team":"CHAOS","lane":"L1","laneToken":"L1","laneGuess":"mid","position":"P1","hash":"1931666598","generation":"2026-05"},
+  {"id":"Something_Else_Entirely","kind":"unknown","generation":"unknown"},
+  {"id":"Turret_TNeutral_L9_P0_42","kind":"turret","laneToken":"L9","position":"P0","hash":"42","generation":"unknown"}
+]

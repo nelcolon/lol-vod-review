@@ -10,7 +10,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "dev": "npm run dev -w apps/desktop",
-    "event-dump": "npm run start -w tools/event-dump"
+    "event-dump": "npm run start -w tools/event-dump --"
   },
   "engines": { "node": ">=22" },
   "devDependencies": {

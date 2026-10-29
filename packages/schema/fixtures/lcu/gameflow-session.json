@@ -1,0 +1,17 @@
+{
+  "gameClient": {"observerServerIp":"","observerServerPort":0,"running":true,"serverIp":"127.0.0.1","serverPort":7000,"visible":true},
+  "gameData": {
+    "gameId": 7000000001,
+    "gameName": "",
+    "isCustomGame": false,
+    "password": "",
+    "playerChampionSelections": [],
+    "queue": {"allowablePremadeSizes":[1,2],"areFreeChampionsAllowed":true,"category":"PvP","description":"Ranked Solo/Duo","gameMode":"CLASSIC","gameTypeConfig":{"id":1,"name":"GAME_CFG_PICK_BLIND"},"id":420,"isRanked":true,"mapId":11,"name":"Ranked Solo/Duo","type":"RANKED_SOLO_5x5"},
+    "spectatorsAllowed": false,
+    "teamOne": [],
+    "teamTwo": []
+  },
+  "gameDodge": {"dodgeIds":[],"phase":"None","state":"Invalid"},
+  "map": {"assets":{},"description":"","gameMode":"CLASSIC","gameModeName":"Summoner's Rift","gameModeShortName":"Summoner's Rift","gameMutator":"","id":11,"isRGM":false,"mapStringId":"SR","name":"Summoner's Rift","perPositionDisallowedSummonerSpells":{},"perPositionRequiredSummonerSpells":{},"platformId":"","platformName":"League of Legends","properties":{"suppressRunesMasteriesPerks":false}},
+  "phase": "InProgress"
+}

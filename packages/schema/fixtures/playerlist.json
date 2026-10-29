@@ -1,0 +1,702 @@
+[
+ {
+  "championName": "Garen",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "TOP",
+  "rawChampionName": "game_character_displayname_Garen",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Fake Top#FAKE1",
+  "riotIdGameName": "Fake Top",
+  "riotIdTagLine": "FAKE1",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Fake Top#FAKE1",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "ORDER"
+ },
+ {
+  "championName": "LeeSin",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "JUNGLE",
+  "rawChampionName": "game_character_displayname_LeeSin",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Fake Jungle#FAKE2",
+  "riotIdGameName": "Fake Jungle",
+  "riotIdTagLine": "FAKE2",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Fake Jungle#FAKE2",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "ORDER"
+ },
+ {
+  "championName": "Ahri",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "MIDDLE",
+  "rawChampionName": "game_character_displayname_Ahri",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Señor Medio#FAKE3",
+  "riotIdGameName": "Señor Medio",
+  "riotIdTagLine": "FAKE3",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Señor Medio#FAKE3",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "ORDER"
+ },
+ {
+  "championName": "Jinx",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "BOTTOM",
+  "rawChampionName": "game_character_displayname_Jinx",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Fake Adc#FAKE4",
+  "riotIdGameName": "Fake Adc",
+  "riotIdTagLine": "FAKE4",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Fake Adc#FAKE4",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "ORDER"
+ },
+ {
+  "championName": "Thresh",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "UTILITY",
+  "rawChampionName": "game_character_displayname_Thresh",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Fake Support#FAKE5",
+  "riotIdGameName": "Fake Support",
+  "riotIdTagLine": "FAKE5",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Fake Support#FAKE5",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "ORDER"
+ },
+ {
+  "championName": "Darius",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "TOP",
+  "rawChampionName": "game_character_displayname_Darius",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Rival Top#RIV1",
+  "riotIdGameName": "Rival Top",
+  "riotIdTagLine": "RIV1",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Rival Top#RIV1",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "CHAOS"
+ },
+ {
+  "championName": "Vi",
+  "isBot": false,
+  "isDead": true,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "JUNGLE",
+  "rawChampionName": "game_character_displayname_Vi",
+  "rawSkinName": "",
+  "respawnTimer": 23.5,
+  "riotId": "Rival Jungle#RIV2",
+  "riotIdGameName": "Rival Jungle",
+  "riotIdTagLine": "RIV2",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Rival Jungle#RIV2",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "CHAOS"
+ },
+ {
+  "championName": "Syndra",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "MIDDLE",
+  "rawChampionName": "game_character_displayname_Syndra",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Rival Mid#RIV3",
+  "riotIdGameName": "Rival Mid",
+  "riotIdTagLine": "RIV3",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Rival Mid#RIV3",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "CHAOS"
+ },
+ {
+  "championName": "Caitlyn",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "BOTTOM",
+  "rawChampionName": "game_character_displayname_Caitlyn",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Rival Adc#RIV4",
+  "riotIdGameName": "Rival Adc",
+  "riotIdTagLine": "RIV4",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Rival Adc#RIV4",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "CHAOS"
+ },
+ {
+  "championName": "Lulu",
+  "isBot": false,
+  "isDead": false,
+  "items": [
+   {
+    "canUse": false,
+    "consumable": false,
+    "count": 1,
+    "displayName": "Doran's Blade",
+    "itemID": 1055,
+    "price": 450,
+    "rawDescription": "GeneratedTip_Item_1055_Description",
+    "rawDisplayName": "Item_1055_Name",
+    "slot": 0
+   }
+  ],
+  "level": 14,
+  "position": "UTILITY",
+  "rawChampionName": "game_character_displayname_Lulu",
+  "rawSkinName": "",
+  "respawnTimer": 0.0,
+  "riotId": "Rival Support#RIV5",
+  "riotIdGameName": "Rival Support",
+  "riotIdTagLine": "RIV5",
+  "runes": {
+   "keystone": {
+    "displayName": "Conqueror",
+    "id": 8010,
+    "rawDescription": "perk_tooltip_Conqueror",
+    "rawDisplayName": "perk_displayname_Conqueror"
+   },
+   "primaryRuneTree": {
+    "displayName": "Precision",
+    "id": 8000,
+    "rawDescription": "perkstyle_tooltip_7201",
+    "rawDisplayName": "perkstyle_displayname_7201"
+   },
+   "secondaryRuneTree": {
+    "displayName": "Resolve",
+    "id": 8400,
+    "rawDescription": "perkstyle_tooltip_7204",
+    "rawDisplayName": "perkstyle_displayname_7204"
+   }
+  },
+  "scores": {
+   "assists": 3,
+   "creepScore": 150,
+   "deaths": 2,
+   "kills": 4,
+   "wardScore": 12.5
+  },
+  "screenPositionBottom": "9223372036854775807",
+  "screenPositionCenter": "9223372036854775807",
+  "skinID": 0,
+  "summonerName": "Rival Support#RIV5",
+  "summonerSpells": {
+   "summonerSpellOne": {
+    "displayName": "Flash",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerFlash_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+   },
+   "summonerSpellTwo": {
+    "displayName": "Ignite",
+    "rawDescription": "GeneratedTip_SummonerSpell_SummonerDot_Description",
+    "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"
+   }
+  },
+  "team": "CHAOS"
+ }
+]

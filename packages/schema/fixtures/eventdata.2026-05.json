@@ -1,0 +1,10 @@
+{
+  "Events": [
+    {"EventID":0,"EventName":"GameStart","EventTime":0.0412},
+    {"EventID":1,"EventName":"MinionsSpawning","EventTime":65.0},
+    {"Assisters":[],"EventID":2,"EventName":"TurretKilled","EventTime":810.0,"KillerName":"Fake Adc","TurretKilled":"Turret_TChaos_L2_P3_2521511112"},
+    {"Assisters":[],"EventID":3,"EventName":"TurretKilled","EventTime":840.0,"KillerName":"Rival Top","TurretKilled":"Turret_TOrder_L0_P3_528623213"},
+    {"Assisters":["Fake Jungle"],"EventID":4,"EventName":"InhibKilled","EventTime":1500.0,"KillerName":"Fake Adc","InhibKilled":"Inhib_TChaos_L1_P1_1931666598"},
+    {"EventID":5,"EventName":"GameEnd","EventTime":1900.0,"Result":"Neither"}
+  ]
+}

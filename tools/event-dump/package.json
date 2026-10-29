@@ -1,0 +1,18 @@
+{
+  "name": "@lvr/event-dump",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Phase 0 fixture recorder: polls the LCU gameflow phase and the Live Client Data API (port 2999) and writes raw JSONL dumps.",
+  "type": "module",
+  "bin": { "lvr-event-dump": "./dist/cli.js" },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
+    "test": "tsc -b && vitest run",
+    "start": "tsc -b && node dist/cli.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@lvr/schema": "0.0.1"
+  }
+}

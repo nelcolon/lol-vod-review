@@ -1,0 +1,91 @@
+{
+ "abilities": {
+  "Passive": {
+   "abilityLevel": 0,
+   "displayName": "Passive",
+   "id": "JinxPassive",
+   "rawDescription": "GeneratedTip_Spell_JinxPassive_Description",
+   "rawDisplayName": "GeneratedTip_Spell_JinxPassive_DisplayName"
+  },
+  "Q": {
+   "abilityLevel": 5,
+   "displayName": "Q",
+   "id": "JinxQ",
+   "rawDescription": "GeneratedTip_Spell_JinxQ_Description",
+   "rawDisplayName": "GeneratedTip_Spell_JinxQ_DisplayName"
+  },
+  "W": {
+   "abilityLevel": 3,
+   "displayName": "W",
+   "id": "JinxW",
+   "rawDescription": "GeneratedTip_Spell_JinxW_Description",
+   "rawDisplayName": "GeneratedTip_Spell_JinxW_DisplayName"
+  },
+  "E": {
+   "abilityLevel": 3,
+   "displayName": "E",
+   "id": "JinxE",
+   "rawDescription": "GeneratedTip_Spell_JinxE_Description",
+   "rawDisplayName": "GeneratedTip_Spell_JinxE_DisplayName"
+  },
+  "R": {
+   "abilityLevel": 2,
+   "displayName": "R",
+   "id": "JinxR",
+   "rawDescription": "GeneratedTip_Spell_JinxR_Description",
+   "rawDisplayName": "GeneratedTip_Spell_JinxR_DisplayName"
+  }
+ },
+ "championStats": {
+  "abilityHaste": 0.0,
+  "abilityPower": 0.0,
+  "armor": 60.2,
+  "attackDamage": 180.4,
+  "attackRange": 525.0,
+  "attackSpeed": 1.2,
+  "critChance": 0.5,
+  "currentHealth": 1500.0,
+  "maxHealth": 1900.0,
+  "moveSpeed": 345.0,
+  "resourceType": "MANA",
+  "resourceValue": 400.0,
+  "resourceMax": 800.0
+ },
+ "currentGold": 1234.5,
+ "fullRunes": {
+  "generalRunes": [
+   {
+    "displayName": "Lethal Tempo",
+    "id": 8008,
+    "rawDescription": "perk_tooltip_LethalTempo",
+    "rawDisplayName": "perk_displayname_LethalTempo"
+   }
+  ],
+  "keystone": {
+   "displayName": "Lethal Tempo",
+   "id": 8008,
+   "rawDescription": "perk_tooltip_LethalTempo",
+   "rawDisplayName": "perk_displayname_LethalTempo"
+  },
+  "primaryRuneTree": {
+   "displayName": "Precision",
+   "id": 8000
+  },
+  "secondaryRuneTree": {
+   "displayName": "Domination",
+   "id": 8100
+  },
+  "statRunes": [
+   {
+    "id": 5005,
+    "rawDescription": "perk_tooltip_StatModAttackSpeed"
+   }
+  ]
+ },
+ "level": 14,
+ "riotId": "Fake Adc#FAKE4",
+ "riotIdGameName": "Fake Adc",
+ "riotIdTagLine": "FAKE4",
+ "summonerName": "Fake Adc#FAKE4",
+ "teamRelativeColors": true
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@lvr/schema",
+  "version": "0.0.1",
+  "private": true,
+  "description": "zod schemas and TypeScript types for the League Live Client Data API (port 2999) and the LCU, plus sanitized fixtures.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./fixtures/*": "./fixtures/*"
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  }
+}

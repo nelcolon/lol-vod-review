@@ -1,0 +1,12 @@
+{
+  "Events": [
+    {"EventID":0,"EventName":"GameStart","EventTime":0.0563},
+    {"Assisters":[],"EventID":1,"EventName":"TurretKilled","EventTime":620.1,"KillerName":"Fake Top","TurretKilled":"Turret_T2_L_03_A"},
+    {"Assisters":["Fake Jungle"],"EventID":2,"EventName":"TurretKilled","EventTime":700.2,"KillerName":"Fake Adc","TurretKilled":"Turret_T2_R_03_A"},
+    {"Assisters":[],"EventID":3,"EventName":"TurretKilled","EventTime":800.3,"KillerName":"Rival Mid","TurretKilled":"Turret_T1_C_05_A"},
+    {"Assisters":[],"EventID":4,"EventName":"InhibKilled","EventTime":1500.0,"KillerName":"Fake Adc","InhibKilled":"Barracks_T2_R1"},
+    {"Assisters":[],"EventID":5,"EventName":"InhibKilled","EventTime":1600.0,"KillerName":"Rival Mid","InhibKilled":"Barracks_T1_C1"},
+    {"EventID":6,"EventName":"InhibRespawned","EventTime":1800.0,"InhibRespawned":"Barracks_T2_R1"},
+    {"EventID":7,"EventName":"GameEnd","EventTime":1900.0,"Result":"Lose"}
+  ]
+}

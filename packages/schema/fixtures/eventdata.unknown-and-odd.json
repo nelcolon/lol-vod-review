@@ -1,0 +1,10 @@
+{
+  "Events": [
+    {"EventID":0,"EventName":"GameStart","EventTime":0.05},
+    {"EventID":1,"EventName":"FeatOfStrength","EventTime":400.0,"FeatType":"FirstTurret","Team":"ORDER"},
+    {"EventID":2,"EventName":"VoidgrubKill","EventTime":410.0,"KillerName":"Fake Jungle"},
+    {"EventID":3,"EventName":"ChampionKill","EventTime":420.0,"KillerName":"Fake Top"},
+    {"Assisters":[],"EventID":4,"EventName":"TurretKilled","EventTime":430.0,"KillerName":"Minion_T100L1S07","TurretKilled":"Turret_TNeutral_L9_P0_42"},
+    {"EventID":5,"EventName":"InhibRespawned","EventTime":440.0,"InhibRespawned":"Something_Else_Entirely"}
+  ]
+}
