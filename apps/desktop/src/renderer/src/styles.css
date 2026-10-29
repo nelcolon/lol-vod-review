@@ -363,6 +363,13 @@ table.games tbody tr:focus {
   display: block;
   cursor: pointer;
 }
+.video-wrap:fullscreen {
+  max-height: none;
+  border-radius: 0;
+}
+.video-wrap:fullscreen video {
+  object-fit: contain;
+}
 .controls {
   display: flex;
   align-items: center;

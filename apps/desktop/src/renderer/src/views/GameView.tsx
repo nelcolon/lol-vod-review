@@ -23,6 +23,7 @@ export function GameView() {
   const saveNote = useStore((s) => s.saveNote);
   const showToast = useStore((s) => s.showToast);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
 
   const segment = bundle?.segments[0] ?? null;
@@ -96,6 +97,21 @@ export function GameView() {
     [seek, selectMoment],
   );
 
+  // Fullscreen the video area only; Esc leaves fullscreen instead of going back to the library.
+  const fsExitAt = useRef(0);
+  useEffect(() => {
+    const onFs = () => {
+      if (!document.fullscreenElement) fsExitAt.current = performance.now();
+    };
+    document.addEventListener('fullscreenchange', onFs);
+    return () => document.removeEventListener('fullscreenchange', onFs);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void wrapRef.current?.requestFullscreen().catch(() => undefined);
+  }, []);
+
   const addBookmark = useCallback(async () => {
     const t = player.currentMs;
     const n = await saveNote({ momentId: selectedMomentId, videoTMs: t, text: '' });
@@ -133,9 +149,15 @@ export function GameView() {
       '4': () => player.setRate(RATES['4']!),
       b: () => void addBookmark(),
       B: () => void addBookmark(),
-      Escape: () => navigate({ view: 'library' }),
+      f: () => toggleFullscreen(),
+      F: () => toggleFullscreen(),
+      Escape: () => {
+        if (document.fullscreenElement) void document.exitFullscreen();
+        // Chromium may already have left fullscreen on this same Esc press.
+        else if (performance.now() - fsExitAt.current > 300) navigate({ view: 'library' });
+      },
     }),
-    [fps, starts, momentsByTime, goToMoment, addBookmark, navigate],
+    [fps, starts, momentsByTime, goToMoment, addBookmark, navigate, toggleFullscreen],
   );
   useKeyboard(handlers, Boolean(bundle));
 
@@ -166,8 +188,16 @@ export function GameView() {
 
       <div className="game-body">
         <div className="player-col">
-          <div className="video-wrap">
-            <video ref={videoRef} src={src} preload="auto" playsInline onClick={() => player.toggle()} />
+          <div className="video-wrap" ref={wrapRef}>
+            <video
+              ref={videoRef}
+              src={src}
+              preload="auto"
+              playsInline
+              onClick={() => player.toggle()}
+              // The two clicks of a double-click toggle play twice, so only fullscreen changes.
+              onDoubleClick={toggleFullscreen}
+            />
           </div>
           <div className="controls">
             <button type="button" onClick={() => player.toggle()} title="Space">
