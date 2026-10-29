@@ -208,6 +208,7 @@ export const RECORDABLE_QUEUES: ReadonlyArray<{ id: number; label: string; defau
   { id: 450, label: 'ARAM', defaultOn: true },
   { id: 1700, label: 'Arena', defaultOn: false },
   { id: 0, label: 'Custom games', defaultOn: false },
+  { id: 3140, label: 'Practice Tool', defaultOn: false },
 ];
 
 export interface Settings {

@@ -237,7 +237,8 @@ export function reduce(prev: LifecycleContext, input: LifecycleInput, options: L
         enterReconnecting(ctx, effects);
       } else if (input.type === 'gameWindowLost') {
         enterReconnecting(ctx, effects);
-      } else if (input.type === 'gameflowPhase' && GAME_OVER_PHASES.has(input.phase)) {
+      } else if (input.type === 'gameflowPhase' && (GAME_OVER_PHASES.has(input.phase) || LOBBY_PHASES.has(input.phase))) {
+        // Leaving Practice Tool goes InProgress → None with no GameEnd and no end screen.
         finishGame(ctx, effects);
       } else if (input.type === 'userPause') {
         if (input.paused && ctx.recorderActive) {

@@ -2,9 +2,10 @@ import { app, BrowserWindow, session, shell } from 'electron';
 import { join, resolve } from 'node:path';
 import type { Backend } from './backend';
 import { installMediaProtocol, registerMediaScheme } from './media-protocol';
+import { CoreBackend } from './core-backend';
 import { MockBackend } from './mock-backend';
 import { registerIpc } from './ipc';
-import { clipsDir, devAssetsDir, mockStatePath, recordingsDir, sampleVideoPath, settingsPath } from './paths';
+import { clipsDir, dbPath, devAssetsDir, mockStatePath, recorderPath, recordingsDir, sampleVideoPath, settingsPath } from './paths';
 import { SettingsStore } from './settings';
 import { maybeRunSmoke } from './smoke';
 import { AppTray } from './tray';
@@ -23,13 +24,13 @@ let tray: AppTray | null = null;
 let quitting = false;
 const startHidden = process.argv.includes('--hidden');
 
-/** The seam: swap `MockBackend` for a core-backed implementation here. */
+/** `CoreBackend` records real games; `LVR_MOCK=1` (and the smoke test) use the fake library. */
 function createBackend(): Backend {
-  return new MockBackend({
-    sampleVideo: sampleVideoPath(),
-    statePath: mockStatePath(),
-    mediaRoots: [devAssetsDir(), recordingsDir(), clipsDir()],
-  });
+  const roots = [devAssetsDir(), recordingsDir(), clipsDir()];
+  if (process.env['LVR_MOCK'] === '1' || process.env['LVR_SMOKE'] === '1') {
+    return new MockBackend({ sampleVideo: sampleVideoPath(), statePath: mockStatePath(), mediaRoots: roots });
+  }
+  return new CoreBackend({ dbPath: dbPath(), recordingsDir: recordingsDir(), recorderExe: recorderPath(), mediaRoots: roots });
 }
 
 async function main(): Promise<void> {

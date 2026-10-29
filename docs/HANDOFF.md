@@ -47,16 +47,17 @@ Phase 0 — needs the human to play:
    Discord included) is what the user wants, so per-process loopback is dropped. Still open: black/frozen-frame warnings in `detect.rs` untested
    against a real black capture.
 
-Phase 1 — wiring (pure coding, no League needed until the end):
-4. In `apps/desktop/src/main/index.ts` `createBackend()`, replace `MockBackend` with a `CoreBackend`
-   that uses `@lvr/core`: `LifecycleRunner` + LCU lockfile watcher + `LiveClientPoller` (fetch with
-   `RIOT_CA_PEM` from `@lvr/schema`, hostname check off) + `ClockMapper` + `GameStore` (better-sqlite3
-   needs `electron-rebuild` for Electron's ABI) + the recorder sidecar (spawn `lvr-recorder.exe`,
-   JSON lines per PLAN §3.2; bundle it as an extraResource like ffmpeg in `electron-builder.yml`).
-5. Switch `@lvr/core/src/types.ts` to import from `@lvr/schema` (names already match).
-6. Post-game pipeline: remux, thumbnails, `events.jsonl` persisted next to the segment, moments
-   computed and stored, retention run. Then record 10 unattended games (Phase 1 exit criterion:
-   markers within ±250 ms).
+Phase 1 — wiring: **done 2026-10-29, untested against a live game.**
+4. `apps/desktop/src/main/core-backend.ts` (`CoreBackend`) is the default backend; `LVR_MOCK=1` or
+   `LVR_SMOKE=1` brings back `MockBackend`. Pieces in `src/main/core/`: `http.ts` (2999 with Riot CA,
+   LCU), `lcu.ts` (lockfile + gameflow 1 Hz + session), `recorder.ts` (sidecar JSON lines), `mapping.ts`
+   (core rows → renderer contracts). Core switched to `node:sqlite` (better-sqlite3 cannot load in
+   Electron 45). The recorder finds the League window itself (`requireGameWindow: false`).
+   Data: `%APPDATA%\@lvr\desktop\lvr.sqlite`, videos + raw `events.jsonl` in `...\recordings\<ts>_<gameId>\`.
+   Run with `npm run dev` from the repo root (builds schema + core first).
+5. Not done: `@lvr/core/src/types.ts` → `@lvr/schema` imports.
+6. Not done: faststart remux, thumbnails, retention run after each game. Phase 1 exit: 10 unattended
+   games, markers within ±250 ms.
 
 Phase 2-4: as in `docs/PLAN.md` §5 (review polish, LCU `game-timelines` enrichment → taxonomy v2,
 trends, installer/signing). Riot Developer Portal registration only before sharing the app.

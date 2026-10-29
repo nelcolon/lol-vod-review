@@ -13,6 +13,9 @@ extraResources:
     to: ffmpeg.exe
   - from: ../../tools/bin/ffprobe.exe
     to: ffprobe.exe
+  # Recorder sidecar (packages/recorder, `cargo build --release` first).
+  - from: ../../packages/recorder/target/release/lvr-recorder.exe
+    to: lvr-recorder.exe
 asar: true
 win:
   target:

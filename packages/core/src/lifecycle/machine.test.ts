@@ -198,6 +198,21 @@ describe('lifecycle reducer', () => {
     expect(r.ctx.state).toBe('POST_PROCESS');
   });
 
+  it('ends a Practice Tool game on InProgress → None (no GameEnd, no end screen)', () => {
+    const opts: LifecycleOptions = { settings: { ...DEFAULT_RECORDING_SETTINGS, practiceTool: true }, requireGameWindow: false };
+    const { effects, states } = run(
+      [
+        { type: 'lockfileAppeared' },
+        { type: 'gameflowPhase', phase: 'InProgress' },
+        { type: 'liveClientUp', info: { gameMode: 'PRACTICETOOL', mapId: 11 } },
+        { type: 'gameflowPhase', phase: 'None' },
+      ],
+      opts,
+    );
+    expect(states.slice(-2)).toEqual(['RECORDING', 'POST_PROCESS']);
+    expect(types(effects)).toEqual(['startPolling', 'startRecording', 'stopRecording', 'stopPolling', 'runPostProcess']);
+  });
+
   it('leaves LOADING when the game fails to launch', () => {
     const r = run([{ type: 'lockfileAppeared' }, { type: 'gameflowPhase', phase: 'InProgress' }, { type: 'gameflowPhase', phase: 'FailedToLaunch' }]);
     expect(r.ctx.state).toBe('CLIENT_UP');

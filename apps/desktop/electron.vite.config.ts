@@ -4,10 +4,11 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    // The workspace packages are ESM; bundle them into the CJS main build.
+    plugins: [externalizeDepsPlugin({ exclude: ['@lvr/core', '@lvr/schema'] })],
     build: {
       outDir: 'out/main',
-      rollupOptions: { input: { index: resolve(__dirname, 'src/main/index.ts') } },
+      rollupOptions: { input: { index: resolve(__dirname, 'src/main/index.ts') }, external: ['node:sqlite'] },
     },
   },
   preload: {

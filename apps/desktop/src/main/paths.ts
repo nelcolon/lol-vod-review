@@ -37,3 +37,13 @@ export function settingsPath(): string {
 export function mockStatePath(): string {
   return resolve(app.getPath('userData'), 'mock-state.json');
 }
+
+/** Recorder sidecar: bundled next to the exe when packaged, the cargo release build in dev. */
+export function recorderPath(): string {
+  if (app.isPackaged) return resolve(process.resourcesPath, 'lvr-recorder.exe');
+  return resolve(repoRoot(), 'packages', 'recorder', 'target', 'release', 'lvr-recorder.exe');
+}
+
+export function dbPath(): string {
+  return resolve(app.getPath('userData'), 'lvr.sqlite');
+}
