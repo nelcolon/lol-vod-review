@@ -820,3 +820,9 @@ table.games tbody tr:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.controls button.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--fg);
+}

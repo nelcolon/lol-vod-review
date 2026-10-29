@@ -28,6 +28,7 @@ interface PlayerState {
   durationMs: number;
   playing: boolean;
   rate: number;
+  muted: boolean;
 }
 
 export interface AppState {
@@ -84,7 +85,7 @@ export const useStore = create<AppState>((set, get) => ({
   laneFilter: 'all',
   libraryResult: 'all',
   libraryQueue: 'all',
-  player: { currentMs: 0, durationMs: 0, playing: false, rate: 1 },
+  player: { currentMs: 0, durationMs: 0, playing: false, rate: 1, muted: false },
   toast: null,
 
   navigate(route) {
@@ -107,7 +108,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   async openGame(gameId) {
-    set({ route: { view: 'game', gameId }, bundleLoading: true, bundle: null, selectedMomentId: null, player: { currentMs: 0, durationMs: 0, playing: false, rate: 1 } });
+    set({ route: { view: 'game', gameId }, bundleLoading: true, bundle: null, selectedMomentId: null, player: { currentMs: 0, durationMs: 0, playing: false, rate: 1, muted: get().player.muted } });
     try {
       const bundle = await window.lvr.getGame(gameId);
       if (!bundle) throw new Error('game not found');

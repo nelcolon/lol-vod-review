@@ -43,6 +43,9 @@ export function GameView() {
     const onPlay = () => setPlayer({ playing: true });
     const onPause = () => setPlayer({ playing: false });
     const onRate = () => setPlayer({ rate: el.playbackRate });
+    const onVolume = () => setPlayer({ muted: el.muted });
+    el.muted = player.muted;
+    setPlayer({ muted: el.muted });
     const onError = () => showToast(`Video failed to load (${el.error?.code ?? '?'}). Is dev-assets/sample.mp4 present?`, 'error');
     el.addEventListener('loadedmetadata', onMeta);
     el.addEventListener('timeupdate', sync);
@@ -50,6 +53,7 @@ export function GameView() {
     el.addEventListener('play', onPlay);
     el.addEventListener('pause', onPause);
     el.addEventListener('ratechange', onRate);
+    el.addEventListener('volumechange', onVolume);
     el.addEventListener('error', onError);
     return () => {
       el.removeEventListener('loadedmetadata', onMeta);
@@ -58,6 +62,7 @@ export function GameView() {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ratechange', onRate);
+      el.removeEventListener('volumechange', onVolume);
       el.removeEventListener('error', onError);
       player.attach(null);
     };
@@ -106,6 +111,10 @@ export function GameView() {
       J: () => player.skip(-10_000),
       l: () => player.skip(10_000),
       L: () => player.skip(10_000),
+      ArrowLeft: () => player.skip(-5_000),
+      ArrowRight: () => player.skip(5_000),
+      m: () => player.toggleMute(),
+      M: () => player.toggleMute(),
       ',': () => player.stepFrame(-1, fps),
       '.': () => player.stepFrame(1, fps),
       '[': () => {
@@ -175,6 +184,9 @@ export function GameView() {
             </button>
             <button type="button" onClick={() => player.stepFrame(1, fps)} title=".">
               frame ▸
+            </button>
+            <button type="button" className={playerState.muted ? 'on' : ''} onClick={() => player.toggleMute()} title="M">
+              {playerState.muted ? 'Unmute' : 'Mute'}
             </button>
             <span className="mono time">
               {formatTime(playerState.currentMs, true)} / {formatTime(durationMs)}

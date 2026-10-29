@@ -21,7 +21,7 @@ export function StatusBar() {
       <div className="spacer" />
       {route.view === 'game' && bundle && (
         <span className="muted hint">
-          Space play · J/K/L ±10 s · , . frame · [ ] moments · 1-4 speed · B bookmark · Esc back
+          Space play · ←/→ ±5 s · J/L ±10 s · , . frame · M mute · [ ] moments · 1-4 speed · B bookmark · Esc back
         </span>
       )}
     </footer>

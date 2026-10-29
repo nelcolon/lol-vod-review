@@ -48,6 +48,28 @@ class Player {
     else this.pause();
   }
 
+  /** Mute is remembered across games and restarts (a per-viewer preference). */
+  get muted(): boolean {
+    try {
+      return localStorage.getItem('lvr.muted') === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  setMuted(muted: boolean): void {
+    if (this.el) this.el.muted = muted;
+    try {
+      localStorage.setItem('lvr.muted', muted ? '1' : '0');
+    } catch {
+      /* storage unavailable: mute still applies to this video */
+    }
+  }
+
+  toggleMute(): void {
+    this.setMuted(!(this.el?.muted ?? this.muted));
+  }
+
   setRate(rate: number): void {
     if (this.el) this.el.playbackRate = rate;
   }
