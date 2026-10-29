@@ -1,6 +1,6 @@
 /**
  * Repository layer over the PLAN §3.5 schema. One `GameStore` per database; the core is
- * the single writer. All methods are synchronous (better-sqlite3).
+ * the single writer. All methods are synchronous (`node:sqlite`).
  */
 import type { EventRow } from '../events/normalize.js';
 import type { Moment, MomentLabel, MomentTheme, ScoreComponents } from '../moments/engine.js';

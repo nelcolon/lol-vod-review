@@ -3,7 +3,7 @@
 Pure, testable core of lol-vod-review (see `docs/PLAN.md` §3). Nothing in this package
 touches League, Electron, Windows APIs or the network directly: clocks, `fetch`, timers and
 the filesystem are injected, so every module runs under vitest on any OS. The only native
-dependency is `better-sqlite3` (prebuilt binaries; loads on Windows Node 24).
+dependency is none: SQLite is `node:sqlite` (Node ≥ 22.13, Electron 45 = Node 24.22).
 
 ```
 src/
