@@ -132,8 +132,7 @@ Format: **H.264**, 1-second GOP (precise seeks and `-c copy` cuts), CFR 60 (or 3
 default 12 Mbps at 1080p (~2.7 GB / 30 min). Written as **fragmented MP4** so a crash loses
 ≤1 s; remuxed to faststart MP4 post-game.
 
-Audio: game-only via WASAPI process loopback on the League PID (Windows 11 / build 20348 is
-documented; Windows 10 19045 to be tested), optional mic on a second track.
+Audio: system loopback (everything the user hears, by choice 2026-10-29), optional mic on a second track.
 
 ### 3.3 Game lifecycle state machine (core)
 

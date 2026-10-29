@@ -79,9 +79,8 @@ Closing stdin ends the session cleanly, so if the Electron process dies the reco
   for v1 (decision 2026-10-29); if it bites, rotate segments and concat post-game.
 - Not faststart: `moov` is at the end. Local playback is fine; the post-game step may remux with
   `ffmpeg -i in.mp4 -c copy -movflags +faststart out.mp4`.
-- **Audio is system loopback** (default render endpoint), so Discord, music, and so on are recorded too.
-  Per-process loopback on the League PID (`ActivateAudioInterfaceAsync` with
-  `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK`) is still to do; mic is not implemented (`mic_unsupported`).
+- Audio is **system loopback** (default render endpoint): everything you hear is recorded, Discord and
+  music included. This is intended (decision 2026-10-29); mic is not implemented (`mic_unsupported`).
 - No scaling: the output size is locked to the first frame (or `width`/`height`); later size changes are
   cropped or padded on the GPU path (`size_changed` warning).
 - Black and frozen-frame detection is unit-tested on synthetic grids only, not against a real black capture.
