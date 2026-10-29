@@ -100,6 +100,12 @@ export interface LifecycleContext {
    * (the end-of-game screen still open) must not start a new game via the window fallback.
    */
   lastGamePid: number | null;
+  /**
+   * Set when a game finishes, cleared once the LCU leaves the in-game phases (or the client
+   * closes). Until then the still-open game (Practice Tool victory screen, end-of-game
+   * screen with 2999 still answering) must not start a new game.
+   */
+  gameOver: boolean;
 }
 
 export interface LifecycleOptions {
@@ -131,6 +137,7 @@ export function initialContext(): LifecycleContext {
     result: null,
     durationS: null,
     lastGamePid: null,
+    gameOver: false,
   };
 }
 
@@ -154,11 +161,14 @@ export function reduce(prev: LifecycleContext, input: LifecycleInput, options: L
       break;
     case 'lockfileVanished':
       ctx.lockfile = false;
+      ctx.gameOver = false;
       break;
     case 'gameflowPhase':
       ctx.gameflow = input.phase;
+      if (!IN_GAME_PHASES.has(input.phase)) ctx.gameOver = false;
       break;
     case 'liveClientUp':
+      if (ctx.gameOver) break; // the finished game's 2999, not a new game
       ctx.liveUp = true;
       if (input.info) mergeInfo(ctx, input.info);
       break;
@@ -273,7 +283,7 @@ export function reduce(prev: LifecycleContext, input: LifecycleInput, options: L
         ctx.state = ctx.lockfile ? 'CLIENT_UP' : 'IDLE';
         // The player may already be in the next champ select / game.
         if (ctx.gameflow === 'ChampSelect') ctx.state = 'CHAMP_SELECT';
-        else if (ctx.gameflow !== null && IN_GAME_PHASES.has(ctx.gameflow)) enterLoading(ctx, effects, options);
+        else if (ctx.gameflow !== null && IN_GAME_PHASES.has(ctx.gameflow) && !ctx.gameOver) enterLoading(ctx, effects, options);
       }
       break;
   }
@@ -288,6 +298,7 @@ export function reduce(prev: LifecycleContext, input: LifecycleInput, options: L
  * game window appeared. A window with the PID of the game that just finished is ignored.
  */
 function startsGameFromOutside(ctx: LifecycleContext, input: LifecycleInput): boolean {
+  if (ctx.gameOver) return false;
   if (input.type === 'liveClientUp') return true;
   if (input.type === 'gameWindowFound') {
     if (ctx.lastGamePid !== null && (input.pid === undefined || input.pid === ctx.lastGamePid)) return false;
@@ -307,8 +318,9 @@ function applyPhaseOutsideGame(ctx: LifecycleContext, effects: LifecycleEffect[]
   const phase = ctx.gameflow;
   if (phase === null) return;
   if (phase === 'ChampSelect') ctx.state = 'CHAMP_SELECT';
-  else if (IN_GAME_PHASES.has(phase)) enterLoading(ctx, effects, options);
-  else if (LOBBY_PHASES.has(phase) || GAME_OVER_PHASES.has(phase)) ctx.state = ctx.lockfile ? 'CLIENT_UP' : 'IDLE';
+  else if (IN_GAME_PHASES.has(phase)) {
+    if (!ctx.gameOver) enterLoading(ctx, effects, options);
+  } else if (LOBBY_PHASES.has(phase) || GAME_OVER_PHASES.has(phase)) ctx.state = ctx.lockfile ? 'CLIENT_UP' : 'IDLE';
 }
 
 function enterLoading(ctx: LifecycleContext, effects: LifecycleEffect[], options: LifecycleOptions): void {
@@ -369,6 +381,7 @@ function finishGame(ctx: LifecycleContext, effects: LifecycleEffect[]): void {
   effects.push({ type: 'stopPolling' });
   const game = summary(ctx);
   ctx.lastGamePid = ctx.window.pid;
+  ctx.gameOver = ctx.gameflow !== null && IN_GAME_PHASES.has(ctx.gameflow);
 
   if (!ctx.recordingEnabled || ctx.segmentIndex === 0) {
     // Nothing recorded: nothing to post-process.

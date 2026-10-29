@@ -270,7 +270,7 @@ export class CoreBackend implements Backend {
 
   private async startSegment(index: number, hwnd: number | null, attempt = 0): Promise<void> {
     const g = this.live;
-    if (!g) return;
+    if (!g || this.runner.state !== 'RECORDING') return;
     const rowId = this.ensureGameRow(g);
     if (g.pendingStop) await g.pendingStop.catch(() => undefined);
     const preset = BITRATE_PRESETS[this.settings?.bitratePreset ?? '1080p60_12'];
@@ -282,6 +282,13 @@ export class CoreBackend implements Backend {
         fps: preset.fps,
         bitrateMbps: preset.mbps,
       });
+      if (this.live !== g || this.runner.state !== 'RECORDING') {
+        // The game ended while the recorder was starting: drop this segment.
+        console.warn('[recorder] started after the game ended, stopping');
+        await this.recorder.stop().catch(() => undefined);
+        rmSync(started.path, { force: true });
+        return;
+      }
       // QPC ticks → ns: the same clock as process.hrtime.bigint() on Windows.
       const startNs = (BigInt(started.qpcStart) * 1_000_000_000n) / BigInt(started.qpcFreq);
       const seg = this.store.addSegment(rowId, {

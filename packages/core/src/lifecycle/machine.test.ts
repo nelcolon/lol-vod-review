@@ -213,6 +213,28 @@ describe('lifecycle reducer', () => {
     expect(types(effects)).toEqual(['startPolling', 'startRecording', 'stopRecording', 'stopPolling', 'runPostProcess']);
   });
 
+  it('does not restart the finished game while its victory screen keeps 2999 up (Practice Tool win)', () => {
+    const opts: LifecycleOptions = { settings: { ...DEFAULT_RECORDING_SETTINGS, practiceTool: true }, requireGameWindow: false };
+    const PT_UP: LifecycleInput = { type: 'liveClientUp', info: { gameMode: 'PRACTICETOOL', mapId: 11 } };
+    const { effects, states } = run(
+      [
+        { type: 'lockfileAppeared' },
+        { type: 'gameflowPhase', phase: 'InProgress' },
+        PT_UP,
+        { type: 'gameEnd', result: 'Win', gameTimeS: 90 },
+        { type: 'postProcessDone' },
+        PT_UP,
+        { type: 'gameWindowFound', hwnd: 1, pid: 7 },
+        { type: 'gameflowPhase', phase: 'None' },
+        { type: 'gameflowPhase', phase: 'InProgress' },
+        PT_UP,
+      ],
+      opts,
+    );
+    expect(states).toEqual(['IDLE', 'CLIENT_UP', 'LOADING', 'RECORDING', 'POST_PROCESS', 'CLIENT_UP', 'CLIENT_UP', 'CLIENT_UP', 'CLIENT_UP', 'LOADING', 'RECORDING']);
+    expect(types(effects).filter((t) => t === 'startRecording')).toHaveLength(2);
+  });
+
   it('leaves LOADING when the game fails to launch', () => {
     const r = run([{ type: 'lockfileAppeared' }, { type: 'gameflowPhase', phase: 'InProgress' }, { type: 'gameflowPhase', phase: 'FailedToLaunch' }]);
     expect(r.ctx.state).toBe('CLIENT_UP');

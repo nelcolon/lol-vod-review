@@ -130,7 +130,8 @@ export function GameView() {
   );
   useKeyboard(handlers, Boolean(bundle));
 
-  if (loading || !bundle || !segment) return <p className="muted">Loading game…</p>;
+  if (loading || !bundle) return <p className="muted">Loading game…</p>;
+  if (!segment) return <p className="muted">No video was recorded for this game.</p>;
   const { game } = bundle;
   const durationMs = playerState.durationMs || segment.durationMs;
 
