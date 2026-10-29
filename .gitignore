@@ -1,0 +1,17 @@
+node_modules/
+dist/
+out/
+release/
+target/
+*.log
+.env
+.env.*
+*.local
+.DS_Store
+Thumbs.db
+# recordings and fixtures with personal data stay local
+recordings/
+fixtures/raw/
+tools/bin/
+.vscode/*
+!.vscode/extensions.json
