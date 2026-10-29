@@ -183,11 +183,50 @@ export interface Clip {
   id: string;
   gameId: string;
   segmentId: string;
+  /** Range on the game video (segment ms). The clip window plays the original video in this range. */
   tInMs: number;
   tOutMs: number;
+  /** The cut MP4 (re-cut when the range changes). */
   path: string;
   createdAt: string;
   pinned: boolean;
+  title: string;
+  description: string;
+  drawings: Drawing[];
+}
+
+export type DrawTool = 'arrow' | 'circle' | 'pen';
+
+/** Points are normalized to the video frame: [0,0] top-left, [1,1] bottom-right. */
+export interface DrawShape {
+  tool: DrawTool;
+  color: string;
+  points: Array<[number, number]>;
+}
+
+/** A telestrator frame: shapes shown from `tMs` (game video ms) for `holdMs`. */
+export interface Drawing {
+  id: string;
+  tMs: number;
+  holdMs: number;
+  shapes: DrawShape[];
+}
+
+export interface ClipPatch {
+  title?: string;
+  description?: string;
+  tInMs?: number;
+  tOutMs?: number;
+  drawings?: Drawing[];
+}
+
+/** Everything the clip window needs. */
+export interface ClipBundle {
+  clip: Clip;
+  game: Game;
+  segment: Segment;
+  /** Events of the game (the window shows those near the clip range). */
+  events: EventRow[];
 }
 
 export type BitratePreset = '1080p60_12' | '1080p30_8' | '1440p60_20';

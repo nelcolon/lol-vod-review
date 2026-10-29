@@ -35,7 +35,7 @@ import { destroyAgents, liveFetch } from './core/http';
 import { LcuWatcher, type LcuSessionInfo } from './core/lcu';
 import { kdaOf, mapClip, mapEvent, mapGame, mapMoment, mapNote, mapSegment, type Me } from './core/mapping';
 import { RecorderSidecar, type StoppedEvent } from './core/recorder';
-import type { CauseTag, Clip, Game, GameBundle, Note, NoteInput, RecorderStatus, Settings } from '../shared/contracts';
+import type { CauseTag, Clip, ClipBundle, Game, GameBundle, Note, NoteInput, RecorderStatus, Settings } from '../shared/contracts';
 import { BITRATE_PRESETS, CAUSE_TAGS } from '../shared/contracts';
 
 export interface CoreBackendOptions {
@@ -570,14 +570,44 @@ export class CoreBackend implements Backend {
     this.store.markMomentReviewed(Number(momentId));
   }
 
-  async addClip(clip: Omit<Clip, 'id' | 'createdAt'>): Promise<Clip> {
+  async addClip(clip: Omit<Clip, 'id' | 'createdAt' | 'drawings' | 'description'>): Promise<Clip> {
     const row = this.store.addClip(Number(clip.gameId), {
       segment_id: clip.segmentId ? Number(clip.segmentId) : null,
       t_in_ms: clip.tInMs,
       t_out_ms: clip.tOutMs,
       path: clip.path,
       pinned: clip.pinned,
+      title: clip.title || null,
     });
+    return mapClip(row);
+  }
+
+  async getClip(id: string): Promise<ClipBundle | null> {
+    const row = this.store.getClip(Number(id));
+    if (!row) return null;
+    const bundle = await this.getGame(String(row.game_id));
+    const segment = bundle?.segments.find((s) => s.id === String(row.segment_id)) ?? bundle?.segments[0];
+    if (!bundle || !segment) return null;
+    return { clip: mapClip(row), game: bundle.game, segment, events: bundle.events };
+  }
+
+  async updateClip(id: string, patch: Partial<Pick<Clip, 'title' | 'description' | 'tInMs' | 'tOutMs' | 'path' | 'drawings'>>): Promise<Clip> {
+    const row = this.store.updateClip(Number(id), {
+      ...(patch.title !== undefined ? { title: patch.title } : {}),
+      ...(patch.description !== undefined ? { description: patch.description } : {}),
+      ...(patch.tInMs !== undefined ? { t_in_ms: patch.tInMs } : {}),
+      ...(patch.tOutMs !== undefined ? { t_out_ms: patch.tOutMs } : {}),
+      ...(patch.path !== undefined ? { path: patch.path } : {}),
+      ...(patch.drawings !== undefined ? { drawings: patch.drawings } : {}),
+    });
+    if (!row) throw new Error(`unknown clip ${id}`);
+    return mapClip(row);
+  }
+
+  async deleteClip(id: string): Promise<Clip | null> {
+    const row = this.store.getClip(Number(id));
+    if (!row) return null;
+    this.store.deleteClip(row.id);
     return mapClip(row);
   }
 }

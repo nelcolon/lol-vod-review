@@ -6,6 +6,7 @@
  * need no filesystem access at runtime (Electron asar friendly).
  */
 import * as m001 from './001_init.js';
+import * as m002 from './002_clip_details.js';
 
 export interface Migration {
   version: number;
@@ -13,6 +14,6 @@ export interface Migration {
   sql: string;
 }
 
-export const MIGRATIONS: readonly Migration[] = [m001];
+export const MIGRATIONS: readonly Migration[] = [m001, m002];
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1]!.version;

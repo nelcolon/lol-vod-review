@@ -64,7 +64,7 @@ export interface AppState {
   saveNote(input: { id?: string; momentId: string | null; videoTMs: number; text: string }): Promise<Note | null>;
   deleteNote(id: string): Promise<void>;
   setTags(momentId: string, tags: CauseTag[]): Promise<void>;
-  exportClip(tInMs: number, tOutMs: number): Promise<void>;
+  exportClip(tInMs: number, tOutMs: number, title?: string): Promise<void>;
   showToast(text: string, kind?: Toast['kind'], action?: Toast['action']): void;
   dismissToast(): void;
 }
@@ -191,14 +191,14 @@ export const useStore = create<AppState>((set, get) => ({
     await get().refreshBundle();
   },
 
-  async exportClip(tInMs, tOutMs) {
+  async exportClip(tInMs, tOutMs, title) {
     const bundle = get().bundle;
     if (!bundle) return;
-    get().showToast('Exporting clip…');
-    const res = await window.lvr.exportClip(bundle.game.id, tInMs, tOutMs);
+    get().showToast('Creating clip…');
+    const res = await window.lvr.exportClip(bundle.game.id, tInMs, tOutMs, title);
     if (res.ok && res.clip) {
       const path = res.clip.path;
-      get().showToast(`Clip saved: ${path.split(/[\\/]/).pop() ?? path}`, 'info', { label: 'Show in folder', run: () => void window.lvr.revealPath(path) });
+      get().showToast(`Clip created${title ? `: ${title}` : ''}`, 'info', { label: 'Show in folder', run: () => void window.lvr.revealPath(path) });
       await get().refreshBundle();
     } else {
       get().showToast(`Clip export failed: ${res.error ?? 'unknown error'}`, 'error');

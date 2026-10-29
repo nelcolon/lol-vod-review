@@ -64,8 +64,8 @@ export function MomentCard({ moment, notes, currentMs, onSeek, onReplay }: Props
           <button type="button" onClick={() => onSeek(Math.max(0, currentMs - 60_000))} title="Seek 60 s before the current position">
             Jump 60 s earlier
           </button>
-          <button type="button" onClick={() => void exportClip(moment.tStartMs, moment.tEndMs)} title="ffmpeg -ss -to -c copy">
-            Export clip
+          <button type="button" className="primary" onClick={() => void exportClip(moment.tStartMs, moment.tEndMs, moment.title)} title="Save this moment as a clip and open it">
+            ✂ Clip
           </button>
         </div>
       </div>

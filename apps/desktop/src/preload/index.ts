@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { CauseTag, NoteInput, RecorderStatus, Settings } from '../shared/contracts';
+import type { CauseTag, ClipPatch, NoteInput, RecorderStatus, Settings } from '../shared/contracts';
 import { IPC, mediaUrl, type LvrApi, type NavigateRoute } from '../shared/ipc';
 
 function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
@@ -15,7 +15,12 @@ const api: LvrApi = {
   deleteNote: (id: string) => ipcRenderer.invoke(IPC.deleteNote, id),
   setTags: (momentId: string, tags: CauseTag[]) => ipcRenderer.invoke(IPC.setTags, momentId, tags),
   markReviewed: (momentId: string) => ipcRenderer.invoke(IPC.markReviewed, momentId),
-  exportClip: (gameId: string, tInMs: number, tOutMs: number) => ipcRenderer.invoke(IPC.exportClip, gameId, tInMs, tOutMs),
+  exportClip: (gameId: string, tInMs: number, tOutMs: number, title?: string) => ipcRenderer.invoke(IPC.exportClip, gameId, tInMs, tOutMs, title),
+  getClip: (id: string) => ipcRenderer.invoke(IPC.getClip, id),
+  updateClip: (id: string, patch: ClipPatch) => ipcRenderer.invoke(IPC.updateClip, id, patch),
+  deleteClip: (id: string) => ipcRenderer.invoke(IPC.deleteClip, id),
+  openClip: (id: string) => ipcRenderer.invoke(IPC.openClip, id),
+  onClipsChanged: (cb) => subscribe<string>(IPC.clipsChanged, cb),
   revealPath: (path: string) => ipcRenderer.invoke(IPC.revealPath, path),
   getSettings: () => ipcRenderer.invoke(IPC.getSettings),
   setSettings: (patch: Partial<Settings>) => ipcRenderer.invoke(IPC.setSettings, patch),

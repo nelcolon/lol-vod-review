@@ -50,16 +50,18 @@ export function NotesPanel({ notes, clips, moments, onSeek, onSelectMoment }: Pr
         <h4>
           Clips <span className="muted small">{clips.length}</span>
         </h4>
-        {clips.length === 0 && <p className="muted small">Exported clips appear here.</p>}
+        {clips.length === 0 && <p className="muted small">Press ✂ Clip on a moment to make one. Clips open in their own window.</p>}
         <ul>
           {clips.map((c) => (
             <li key={c.id}>
-              <span className="mono">
-                {formatTime(c.tInMs)}–{formatTime(c.tOutMs)}
-              </span>
-              <button type="button" className="link" onClick={() => void window.lvr.revealPath(c.path)}>
-                {c.path.split(/[\\/]/).pop()}
+              <button type="button" className="link mono" onClick={() => onSeek(c.tInMs)} title="Seek here in the game">
+                {formatTime(c.tInMs)}
               </button>
+              <button type="button" className="link np-text" onClick={() => void window.lvr.openClip(c.id)} title="Open the clip window">
+                {c.title || c.path.split(/[\\/]/).pop()}
+                {c.drawings.length > 0 && <span className="muted small"> · ✎ {c.drawings.length}</span>}
+              </button>
+              <span className="muted small mono">{formatTime(c.tOutMs - c.tInMs)}</span>
             </li>
           ))}
         </ul>

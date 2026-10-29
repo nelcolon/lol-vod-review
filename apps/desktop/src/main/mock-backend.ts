@@ -12,6 +12,7 @@ import { dirname } from 'node:path';
 import type {
   CauseTag,
   Clip,
+  ClipBundle,
   EventRow,
   Game,
   GameBundle,
@@ -557,8 +558,31 @@ export class MockBackend implements Backend {
     this.saveState();
   }
 
-  async addClip(clip: Omit<Clip, 'id' | 'createdAt'>): Promise<Clip> {
-    const row: Clip = { ...clip, id: `c-${Date.now().toString(36)}`, createdAt: new Date().toISOString() };
+  async getClip(id: string): Promise<ClipBundle | null> {
+    const clip = this.state.clips.find((c) => c.id === id);
+    const b = clip ? this.games.get(clip.gameId) : undefined;
+    const segment = b?.segments[0];
+    if (!clip || !b || !segment) return null;
+    return { clip: { ...clip }, game: this.decorate(b).game, segment, events: b.events };
+  }
+
+  async updateClip(id: string, patch: Partial<Pick<Clip, 'title' | 'description' | 'tInMs' | 'tOutMs' | 'path' | 'drawings'>>): Promise<Clip> {
+    const clip = this.state.clips.find((c) => c.id === id);
+    if (!clip) throw new Error(`unknown clip ${id}`);
+    Object.assign(clip, patch);
+    this.saveState();
+    return { ...clip };
+  }
+
+  async deleteClip(id: string): Promise<Clip | null> {
+    const clip = this.state.clips.find((c) => c.id === id) ?? null;
+    this.state.clips = this.state.clips.filter((c) => c.id !== id);
+    this.saveState();
+    return clip;
+  }
+
+  async addClip(clip: Omit<Clip, 'id' | 'createdAt' | 'drawings' | 'description'>): Promise<Clip> {
+    const row: Clip = { description: '', drawings: [], ...clip, id: `c-${Date.now().toString(36)}`, createdAt: new Date().toISOString() };
     this.state.clips.push(row);
     this.saveState();
     return { ...row };
@@ -640,7 +664,7 @@ export class MockBackend implements Backend {
         notes: Array.isArray(raw.notes) ? raw.notes : [],
         tags: raw.tags && typeof raw.tags === 'object' ? raw.tags : {},
         reviewed: raw.reviewed && typeof raw.reviewed === 'object' ? raw.reviewed : {},
-        clips: Array.isArray(raw.clips) ? raw.clips : [],
+        clips: Array.isArray(raw.clips) ? raw.clips.map((c) => ({ ...c, title: c.title ?? '', description: c.description ?? '', drawings: c.drawings ?? [] })) : [],
       };
     } catch {
       /* first run */

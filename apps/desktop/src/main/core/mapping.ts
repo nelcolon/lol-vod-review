@@ -6,6 +6,7 @@ import type { ClipRow, GameListItem, GameRow, MomentRow, NoteRow, SegmentRow, St
 import type {
   CauseTag,
   Clip,
+  Drawing,
   EventRow,
   Game,
   GameResult,
@@ -221,5 +222,8 @@ export function mapClip(c: ClipRow): Clip {
     path: c.path,
     createdAt: new Date(c.created_at).toISOString(),
     pinned: c.pinned,
+    title: c.title ?? '',
+    description: c.description ?? '',
+    drawings: (Array.isArray(c.drawings) ? c.drawings : []) as Drawing[],
   };
 }

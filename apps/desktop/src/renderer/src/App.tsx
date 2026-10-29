@@ -19,10 +19,14 @@ export function App() {
     const offStatus = window.lvr.onRecorderStatus((r) => useStore.getState().setRecorder(r));
     const offSettings = window.lvr.onSettingsChanged((s) => useStore.getState().setSettingsFromPush(s));
     const offNav = window.lvr.onNavigate((r) => useStore.getState().navigate(r));
+    const offClips = window.lvr.onClipsChanged((gameId) => {
+      if (useStore.getState().bundle?.game.id === gameId) void useStore.getState().refreshBundle();
+    });
     return () => {
       offStatus();
       offSettings();
       offNav();
+      offClips();
     };
   }, []);
 

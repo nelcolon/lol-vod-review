@@ -1,6 +1,9 @@
 import type {
   CauseTag,
+  Clip,
+  ClipBundle,
   ClipExportResult,
+  ClipPatch,
   Game,
   GameBundle,
   Note,
@@ -18,6 +21,10 @@ export const IPC = {
   setTags: 'lvr:setTags',
   markReviewed: 'lvr:markReviewed',
   exportClip: 'lvr:exportClip',
+  getClip: 'lvr:getClip',
+  updateClip: 'lvr:updateClip',
+  deleteClip: 'lvr:deleteClip',
+  openClip: 'lvr:openClip',
   revealPath: 'lvr:revealPath',
   getSettings: 'lvr:getSettings',
   setSettings: 'lvr:setSettings',
@@ -26,6 +33,7 @@ export const IPC = {
   recorderStatus: 'lvr:ev:recorderStatus',
   settingsChanged: 'lvr:ev:settingsChanged',
   navigate: 'lvr:ev:navigate',
+  clipsChanged: 'lvr:ev:clipsChanged',
 } as const;
 
 /** The API exposed on `window.lvr` by the preload script. */
@@ -36,7 +44,15 @@ export interface LvrApi {
   deleteNote(id: string): Promise<void>;
   setTags(momentId: string, tags: CauseTag[]): Promise<void>;
   markReviewed(momentId: string): Promise<void>;
-  exportClip(gameId: string, tInMs: number, tOutMs: number): Promise<ClipExportResult>;
+  /** Cut a clip and open it in its own window. */
+  exportClip(gameId: string, tInMs: number, tOutMs: number, title?: string): Promise<ClipExportResult>;
+  getClip(id: string): Promise<ClipBundle | null>;
+  /** Range changes re-cut the file. */
+  updateClip(id: string, patch: ClipPatch): Promise<Clip>;
+  deleteClip(id: string): Promise<void>;
+  openClip(id: string): Promise<void>;
+  /** A clip of this game was created, edited or deleted (any window). */
+  onClipsChanged(cb: (gameId: string) => void): () => void;
   revealPath(path: string): Promise<void>;
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;

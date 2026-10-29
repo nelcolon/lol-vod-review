@@ -145,6 +145,10 @@ export interface ClipRow {
   path: string;
   created_at: number;
   pinned: boolean;
+  title: string | null;
+  description: string | null;
+  /** Telestrator drawings, opaque to the core. */
+  drawings: unknown[];
 }
 
 export interface NewClip {
@@ -153,7 +157,13 @@ export interface NewClip {
   t_out_ms: number;
   path: string;
   pinned?: boolean;
+  title?: string | null;
+  description?: string | null;
 }
+
+const CLIP_UPDATE_KEYS = new Set(['t_in_ms', 't_out_ms', 'path', 'title', 'description', 'drawings', 'pinned']);
+
+export type ClipUpdate = Partial<Pick<ClipRow, 't_in_ms' | 't_out_ms' | 'path' | 'title' | 'description' | 'drawings' | 'pinned'>>;
 
 export interface GameDetail {
   game: GameRow;
@@ -537,8 +547,8 @@ export class GameStore {
 
   addClip(gameId: number, clip: NewClip): ClipRow {
     const info = this.db
-      .prepare('INSERT INTO clips (game_id, segment_id, t_in_ms, t_out_ms, path, created_at, pinned) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(gameId, clip.segment_id ?? null, clip.t_in_ms, clip.t_out_ms, clip.path, this.now(), clip.pinned ? 1 : 0);
+      .prepare('INSERT INTO clips (game_id, segment_id, t_in_ms, t_out_ms, path, created_at, pinned, title, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(gameId, clip.segment_id ?? null, clip.t_in_ms, clip.t_out_ms, clip.path, this.now(), clip.pinned ? 1 : 0, clip.title ?? null, clip.description ?? null);
     return this.getClip(Number(info.lastInsertRowid))!;
   }
 
@@ -554,6 +564,26 @@ export class GameStore {
         : this.db.prepare('SELECT * FROM clips WHERE game_id = ? ORDER BY created_at DESC').all(gameId)
     ) as RawClip[];
     return rows.map(mapClip);
+  }
+
+  updateClip(id: number, patch: ClipUpdate): ClipRow | undefined {
+    const cols: string[] = [];
+    const params: unknown[] = [];
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === undefined || !CLIP_UPDATE_KEYS.has(k)) continue;
+      if (k === 'drawings') {
+        cols.push('drawings_json = ?');
+        params.push(JSON.stringify(v));
+      } else if (k === 'pinned') {
+        cols.push('pinned = ?');
+        params.push(v ? 1 : 0);
+      } else {
+        cols.push(`${k} = ?`);
+        params.push(v);
+      }
+    }
+    if (cols.length) this.db.prepare(`UPDATE clips SET ${cols.join(', ')} WHERE id = ?`).run(...params, id);
+    return this.getClip(id);
   }
 
   setClipPinned(id: number, pinned: boolean): void {
@@ -619,7 +649,7 @@ export class GameStore {
 // --- mapping -------------------------------------------------------------------------------
 
 type RawGame = Omit<GameRow, 'pinned'> & { pinned: number };
-type RawClip = Omit<ClipRow, 'pinned'> & { pinned: number };
+type RawClip = Omit<ClipRow, 'pinned' | 'drawings'> & { pinned: number; drawings_json: string };
 type RawMoment = Omit<MomentRow, 'reasons' | 'labels' | 'components' | 'event_ids'> & {
   reason_json: string;
   labels_json: string;
@@ -632,7 +662,8 @@ function mapGame(r: RawGame): GameRow {
 }
 
 function mapClip(r: RawClip): ClipRow {
-  return { ...r, pinned: r.pinned === 1 };
+  const { drawings_json, ...rest } = r;
+  return { ...rest, pinned: r.pinned === 1, drawings: safeJson(drawings_json, []) as unknown[] };
 }
 
 function mapMoment(r: RawMoment): MomentRow {

@@ -53,7 +53,7 @@ describe('database', () => {
     expect(currentSchemaVersion(db)).toBe(0);
     const r = migrate(db);
     expect(r).toMatchObject({ from: 0, to: SCHEMA_VERSION });
-    expect(r.applied.map((a) => a.name)).toEqual(['init']);
+    expect(r.applied.map((a) => a.name)).toEqual(['init', 'clip_details']);
     expect(migrate(db).applied).toEqual([]);
     const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as Array<{ name: string }>).map((t) => t.name);
     expect(tables).toEqual(expect.arrayContaining(['games', 'segments', 'participants', 'events', 'moments', 'notes', 'tags', 'clips', 'timeline_cache', 'settings']));
@@ -191,6 +191,9 @@ describe('GameStore', () => {
     expect(s.getClip(c.id)!.pinned).toBe(true);
     expect(s.listClips()).toHaveLength(1);
     expect(s.listClips(g.id)).toHaveLength(1);
+    expect(c).toMatchObject({ title: null, description: null, drawings: [] });
+    const u = s.updateClip(c.id, { title: 'Bad flash', description: 'too early', t_in_ms: 500, drawings: [{ t: 2000, shapes: [] }] });
+    expect(u).toMatchObject({ title: 'Bad flash', description: 'too early', t_in_ms: 500, t_out_ms: 61_000, drawings: [{ t: 2000, shapes: [] }] });
     expect(s.deleteClip(c.id)).toBe(true);
     expect(s.listClips(g.id)).toEqual([]);
   });

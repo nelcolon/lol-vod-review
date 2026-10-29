@@ -1,6 +1,7 @@
 import type {
   CauseTag,
   Clip,
+  ClipBundle,
   Game,
   GameBundle,
   Note,
@@ -36,7 +37,12 @@ export interface Backend {
   markReviewed(momentId: string): Promise<void>;
 
   /** Persist a clip row after the file has been written by the clip pipeline. */
-  addClip(clip: Omit<Clip, 'id' | 'createdAt'>): Promise<Clip>;
+  addClip(clip: Omit<Clip, 'id' | 'createdAt' | 'drawings' | 'description'>): Promise<Clip>;
+  getClip(id: string): Promise<ClipBundle | null>;
+  /** Persist edited fields (the caller has already re-cut the file when the range changed). */
+  updateClip(id: string, patch: Partial<Pick<Clip, 'title' | 'description' | 'tInMs' | 'tOutMs' | 'path' | 'drawings'>>): Promise<Clip>;
+  /** Returns the deleted clip (so the caller can remove its file). */
+  deleteClip(id: string): Promise<Clip | null>;
 
   getRecorderStatus(): RecorderStatus;
   onRecorderStatus(cb: (s: RecorderStatus) => void): () => void;

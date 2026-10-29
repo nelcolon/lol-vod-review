@@ -20,6 +20,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 let mainWindow: BrowserWindow | null = null;
+const clipWindows = new Map<string, BrowserWindow>();
 let tray: AppTray | null = null;
 let quitting = false;
 const startHidden = process.argv.includes('--hidden');
@@ -73,7 +74,7 @@ async function main(): Promise<void> {
   tray.update(backend.getRecorderStatus().state, settings.get().recordingEnabled);
   backend.onRecorderStatus((s) => tray?.update(s.state, s.enabled));
 
-  registerIpc({ backend, settings, getWindow: () => mainWindow });
+  registerIpc({ backend, settings, getWindow: () => mainWindow, openClipWindow });
 
   createWindow(settings);
   if (!startHidden) showWindow();
@@ -94,14 +95,7 @@ function createWindow(settings: SettingsStore): BrowserWindow {
     backgroundColor: '#0f1115',
     title: 'LoL VOD Review',
     autoHideMenuBar: true,
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-      webSecurity: true,
-      spellcheck: false,
-    },
+    webPreferences: WEB_PREFERENCES,
   });
   mainWindow = win;
 
@@ -138,10 +132,60 @@ function createWindow(settings: SettingsStore): BrowserWindow {
     });
   }
 
+  // Dev-only: LVR_DEV_OPEN_CLIP=1 (with LVR_MOCK=1) opens a clip with a drawing, for screenshots.
+  if (!app.isPackaged && process.env['LVR_DEV_OPEN_CLIP'] === '1') {
+    win.webContents.once('did-finish-load', () => {
+      void win.webContents.executeJavaScript(
+        `(async()=>{const g=(await window.lvr.listGames())[0];
+          const r=await window.lvr.exportClip(g.id,60000,75000,'Dev clip');
+          await window.lvr.updateClip(r.clip.id,{description:'Arrow and circle drawn at the in-point.',drawings:[{id:'d1',tMs:60000,holdMs:60000,
+            shapes:[{tool:'arrow',color:'#ff4d4f',points:[[0.2,0.25],[0.45,0.5]]},{tool:'circle',color:'#ffd60a',points:[[0.5,0.45],[0.7,0.7]]}]}]});})()`,
+      );
+    });
+  }
+
   const devUrl = process.env['ELECTRON_RENDERER_URL'];
   if (!app.isPackaged && devUrl) void win.loadURL(devUrl);
   else void win.loadFile(resolve(__dirname, '../renderer/index.html'));
   return win;
+}
+
+const WEB_PREFERENCES = {
+  preload: join(__dirname, '../preload/index.js'),
+  contextIsolation: true,
+  nodeIntegration: false,
+  sandbox: true,
+  webSecurity: true,
+  spellcheck: false,
+} as const;
+
+/** One window per clip; the renderer shows the clip editor when the URL hash is `#clip=<id>`. */
+function openClipWindow(clipId: string): void {
+  const existing = clipWindows.get(clipId);
+  if (existing && !existing.isDestroyed()) {
+    if (existing.isMinimized()) existing.restore();
+    existing.focus();
+    return;
+  }
+  const win = new BrowserWindow({
+    width: 1280,
+    height: 860,
+    minWidth: 800,
+    minHeight: 560,
+    backgroundColor: '#0f1115',
+    title: 'Clip · LoL VOD Review',
+    autoHideMenuBar: true,
+    webPreferences: WEB_PREFERENCES,
+  });
+  clipWindows.set(clipId, win);
+  win.on('closed', () => clipWindows.delete(clipId));
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (e, url) => {
+    if (!url.startsWith(process.env['ELECTRON_RENDERER_URL'] ?? 'file:')) e.preventDefault();
+  });
+  const devUrl = process.env['ELECTRON_RENDERER_URL'];
+  if (!app.isPackaged && devUrl) void win.loadURL(`${devUrl}#clip=${encodeURIComponent(clipId)}`);
+  else void win.loadFile(resolve(__dirname, '../renderer/index.html'), { hash: `clip=${encodeURIComponent(clipId)}` });
 }
 
 function showWindow(): void {

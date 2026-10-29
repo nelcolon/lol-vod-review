@@ -5,7 +5,7 @@
  * non-zero code on failure. Used by `npm run smoke` because nothing in this app is visually
  * verifiable from a terminal.
  */
-import { app, type BrowserWindow } from 'electron';
+import { app, BrowserWindow } from 'electron';
 
 const SCRIPT = String.raw`
 (async () => {
@@ -68,6 +68,54 @@ const SCRIPT = String.raw`
 })()
 `;
 
+type Check = { name: string; ok: boolean; info: unknown };
+
+/** Runs in the clip window opened by `exportClip`. */
+const CLIP_SCRIPT = String.raw`
+(async () => {
+  const out = [];
+  const check = (name, ok, info) => out.push({ name, ok: !!ok, info: info ?? null });
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const waitFor = async (fn, timeoutMs) => { const t0 = Date.now(); for (;;) { const v = fn(); if (v) return v; if (Date.now() - t0 > timeoutMs) return null; await sleep(100); } };
+  try {
+    const id = decodeURIComponent(location.hash.slice('#clip='.length));
+    const video = await waitFor(() => { const v = document.querySelector('.clip-view video'); return v && v.readyState >= 1 && v.currentTime > 0 ? v : null; }, 10000);
+    check('clip window: video starts at the clip in-point (60 s)', video && Math.abs(video.currentTime - 60) < 0.1, video && video.currentTime);
+    check('clip window: title shown', document.querySelector('.clip-title')?.value === 'smoke clip', document.querySelector('.clip-title')?.value);
+    check('clip window: draw layer present', !!document.querySelector('.draw-layer'));
+    const drawing = { id: 'd1', tMs: 65000, holdMs: 3000, shapes: [{ tool: 'arrow', color: '#ff4d4f', points: [[0.1, 0.1], [0.5, 0.5]] }] };
+    await window.lvr.updateClip(id, { description: 'smoke', drawings: [drawing] });
+    const b1 = await window.lvr.getClip(id);
+    check('clip edits persist (description + drawing)', b1.clip.description === 'smoke' && b1.clip.drawings.length === 1 && b1.clip.drawings[0].shapes[0].tool === 'arrow', b1.clip.drawings);
+    const before = b1.clip.path;
+    const c2 = await window.lvr.updateClip(id, { tInMs: 55000, tOutMs: 80000 });
+    check('trim re-cuts the file', c2.tInMs === 55000 && c2.tOutMs === 80000 && c2.path !== before, c2.path.split(/[\\/]/).pop());
+  } catch (err) {
+    check('clip script threw', false, String(err && err.stack || err));
+  }
+  return out;
+})()
+`;
+
+async function runClipChecks(main: BrowserWindow): Promise<Check[]> {
+  const before = new Set(BrowserWindow.getAllWindows().map((w) => w.id));
+  const res = (await main.webContents.executeJavaScript(
+    `(async () => { const g = (await window.lvr.listGames())[0]; return window.lvr.exportClip(g.id, 60000, 75000, 'smoke clip'); })()`,
+    true,
+  )) as { ok: boolean; clip: { id: string } | null; error: string | null };
+  const checks: Check[] = [{ name: 'exportClip creates a clip', ok: res.ok && !!res.clip, info: res.error }];
+  const win = BrowserWindow.getAllWindows().find((w) => !before.has(w.id));
+  checks.push({ name: 'clip window opened', ok: !!win, info: win?.webContents.getURL().split('#')[1] ?? null });
+  if (!win || !res.clip) return checks;
+  if (win.webContents.isLoading()) await new Promise((r) => win.webContents.once('did-finish-load', () => r(null)));
+  checks.push(...((await win.webContents.executeJavaScript(CLIP_SCRIPT, true)) as Check[]));
+  const closed = new Promise((r) => win.once('closed', () => r(true)));
+  await main.webContents.executeJavaScript(`window.lvr.deleteClip(${JSON.stringify(res.clip.id)})`, true);
+  const ok = await Promise.race([closed, new Promise((r) => setTimeout(() => r(false), 3000))]);
+  checks.push({ name: 'deleteClip closes its window', ok: ok === true, info: null });
+  return checks;
+}
+
 export function maybeRunSmoke(win: BrowserWindow): void {
   if (process.env['LVR_SMOKE'] !== '1') return;
   const timeout = setTimeout(() => {
@@ -76,7 +124,8 @@ export function maybeRunSmoke(win: BrowserWindow): void {
   }, 60_000);
   win.webContents.once('did-finish-load', async () => {
     try {
-      const results = (await win.webContents.executeJavaScript(SCRIPT, true)) as { name: string; ok: boolean; info: unknown }[];
+      const results = (await win.webContents.executeJavaScript(SCRIPT, true)) as Check[];
+      results.push(...(await runClipChecks(win)));
       let failed = 0;
       for (const r of results) {
         if (!r.ok) failed++;
