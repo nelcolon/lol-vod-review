@@ -91,6 +91,7 @@ export class CoreBackend implements Backend {
   private status: RecorderStatus = { state: 'idle', gameId: null, sinceIso: null, encoder: null, frames: 0, dropped: 0, enabled: true, detail: 'starting' };
   private readonly listeners = new Set<(s: RecorderStatus) => void>();
   private retryTimer: NodeJS.Timeout | null = null;
+  private discarding = false;
 
   constructor(private readonly opts: CoreBackendOptions) {}
 
@@ -100,7 +101,10 @@ export class CoreBackend implements Backend {
     mkdirSync(this.opts.recordingsDir, { recursive: true });
     this.store = new GameStore(openDatabase(this.opts.dbPath));
     // A crash mid-game leaves rows in 'recording'/'processing'; mark them failed.
-    for (const g of this.store.listGames({ status: ['recording', 'processing'] })) this.store.updateGame(g.id, { status: 'error' });
+    for (const g of this.store.listGames({ status: ['recording', 'processing'] })) {
+      if (g.segment_count === 0) this.store.deleteGame(g.id);
+      else this.store.updateGame(g.id, { status: 'error' });
+    }
 
     this.runner = new LifecycleRunner({
       settings: this.recSettings,
@@ -109,6 +113,8 @@ export class CoreBackend implements Backend {
       onEffect: (e, ctx) => this.onEffect(e, ctx),
       onTransition: (from, to, input) => {
         if (from.state !== to.state) console.log(`[lifecycle] ${from.state} -> ${to.state} (${input.type})`);
+        // After this input's effects ran: a game that ended without post-processing leaves nothing.
+        if (from.state !== to.state) queueMicrotask(() => this.dropUnrecordedGame());
         this.refreshStatus();
       },
     });
@@ -337,7 +343,7 @@ export class CoreBackend implements Backend {
 
   private appendEventLog(t: { event: LiveEvent; observedHostNs: bigint; observedGameTime: number; wallMs: number }): void {
     const g = this.live;
-    if (!g) return;
+    if (!g || !this.runner.context.recordingEnabled) return;
     try {
       this.ensureGameRow(g);
       appendFileSync(
@@ -417,7 +423,24 @@ export class CoreBackend implements Backend {
     return { name, team: p?.team ?? 'ORDER' };
   }
 
+  /** Skipped or never-started games: delete the row/folder if no video was recorded. */
+  private dropUnrecordedGame(): void {
+    const st = this.runner.state;
+    const g = this.live;
+    if (!g || this.discarding || st === 'LOADING' || st === 'RECORDING' || st === 'RECONNECTING' || st === 'POST_PROCESS') return;
+    if (g.segments.length === 0) {
+      if (g.rowId !== null) this.store.deleteGame(g.rowId);
+      if (g.dir) rmSync(g.dir, { recursive: true, force: true });
+    } else if (g.rowId !== null) {
+      this.store.updateGame(g.rowId, { status: 'error' });
+    }
+    this.live = null;
+    this.pendingSession = null;
+    this.refreshStatus();
+  }
+
   private async discard(reason: string): Promise<void> {
+    this.discarding = true;
     const g = this.live;
     console.log(`[lifecycle] discarding game: ${reason}`);
     if (g?.pendingStop) await g.pendingStop.catch(() => undefined);
@@ -425,6 +448,7 @@ export class CoreBackend implements Backend {
     if (g?.dir) rmSync(g.dir, { recursive: true, force: true });
     this.live = null;
     this.pendingSession = null;
+    this.discarding = false;
     this.refreshStatus();
   }
 
