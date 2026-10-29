@@ -1,0 +1,37 @@
+[package]
+name = "lvr-recorder"
+version = "0.1.0"
+edition = "2021"
+description = "LoL VOD Review recorder sidecar: Windows Graphics Capture -> Media Foundation H.264, JSON lines on stdin/stdout"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "lvr-recorder"
+path = "src/main.rs"
+
+[dependencies]
+# WGC + Media Foundation encoder. 2.0.1 is edition 2024 (needs rustc >= 1.85).
+windows-capture = "2.0.1"
+# Same major as windows-capture uses, so D3D/WinRT types line up.
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_System_Performance",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Media_Audio",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+] }
+parking_lot = "0.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ctrlc = "3"
+time = { version = "0.3", features = ["formatting"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
