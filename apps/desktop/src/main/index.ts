@@ -123,6 +123,20 @@ function createWindow(settings: SettingsStore): BrowserWindow {
 
   maybeRunSmoke(win);
 
+  // Dev-only: LVR_DEV_OPEN_FIRST=1 opens the first game and clicks the top moment, for screenshots.
+  if (!app.isPackaged && process.env['LVR_DEV_OPEN_FIRST'] === '1') {
+    win.webContents.once('did-finish-load', () => {
+      setTimeout(() => {
+        void win.webContents.executeJavaScript(
+          `(async()=>{const s=(ms)=>new Promise(r=>setTimeout(r,ms));
+            document.querySelector('tbody tr')?.click(); await s(1500);
+            const m=[...document.querySelectorAll('[data-moment-id],button,li')].find(e=>/death|kill|dragon|baron/i.test(e.textContent||''));
+            m?.click();})()`,
+        );
+      }, 1200);
+    });
+  }
+
   const devUrl = process.env['ELECTRON_RENDERER_URL'];
   if (!app.isPackaged && devUrl) void win.loadURL(devUrl);
   else void win.loadFile(resolve(__dirname, '../renderer/index.html'));

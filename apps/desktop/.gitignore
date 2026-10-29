@@ -2,3 +2,5 @@ dev-assets/
 out/
 dist/
 release/
+*.tsbuildinfo
+!dev-assets/shot.ps1
