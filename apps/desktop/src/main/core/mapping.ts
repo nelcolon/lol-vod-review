@@ -161,7 +161,17 @@ function momentKind(m: MomentRow): MomentKind {
   }
 }
 
-const THEME: Record<string, Theme> = { deaths: 'deaths', objectives: 'objectives', kills: 'kills', team: 'teamfights' };
+/** Derived from the kind (not the stored theme) so games stored before the theme fix read right. */
+const THEME_BY_KIND: Record<string, Theme> = {
+  own_death: 'deaths',
+  own_kill: 'kills',
+  own_assist: 'kills',
+  multikill: 'kills',
+  objective: 'objectives',
+  structure: 'objectives',
+  ace: 'teamfights',
+  team_fight: 'teamfights',
+};
 
 /**
  * `eventRowIdByEventId` translates Live Client EventIDs in `event_ids` to event row ids.
@@ -182,7 +192,7 @@ export function mapMoment(m: MomentRow, tags: string[], eventRowIdByEventId: Map
     triggerGameTimeS: m.t_trigger_s,
     title: m.title,
     reasons: m.reasons,
-    theme: THEME[m.theme] ?? 'teamfights',
+    theme: THEME_BY_KIND[m.kind] ?? 'teamfights',
     mine: m.components.selfInvolvement > 0,
     eventIds: m.event_ids.map((id) => String(eventRowIdByEventId.get(id) ?? id)),
     reviewedAt: iso(m.reviewed_at),

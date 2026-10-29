@@ -454,7 +454,7 @@ function buildMoment(
   );
 
   const kind = kindOf(primary, teamfight);
-  const theme = themeOf(cluster);
+  const theme = themeOf(kind, cluster);
   const tTriggerS = primary.t;
   const tStartS = Math.max(0, Math.min(tTriggerS - cfg.preRollS, first.t - 5));
   const tEndS = last.t + cfg.postRollS;
@@ -509,10 +509,11 @@ function kindOf(primary: Tagged, teamfight: boolean): MomentKind {
   return teamfight ? 'team_fight' : 'team_fight';
 }
 
-function themeOf(cluster: Tagged[]): MomentTheme {
-  if (cluster.some((e) => e.involvementKind === 'death')) return 'deaths';
-  if (cluster.some((e) => e.isObjective)) return 'objectives';
-  if (cluster.some((e) => e.isKill && (e.involvementKind === 'kill' || e.involvementKind === 'assist'))) return 'kills';
+/** Theme follows what the moment is about, not whatever else fell inside its 15 s cluster. */
+function themeOf(kind: MomentKind, cluster: Tagged[]): MomentTheme {
+  if (kind === 'own_death' || cluster.some((e) => e.involvementKind === 'death')) return 'deaths';
+  if (kind === 'own_kill' || kind === 'own_assist' || kind === 'multikill') return 'kills';
+  if (kind === 'objective' || kind === 'structure') return 'objectives';
   return 'team';
 }
 

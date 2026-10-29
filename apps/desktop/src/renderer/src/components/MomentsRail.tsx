@@ -20,7 +20,7 @@ export function filterMoments(moments: Moment[], theme: ThemeFilter, lane: LaneF
   return moments
     .filter((m) => theme === 'all' || m.theme === theme)
     .filter((m) => lane === 'all' || (lane === 'mine' ? m.mine : !m.mine))
-    .sort((a, b) => b.score - a.score || a.tTriggerMs - b.tTriggerMs);
+    .sort((a, b) => a.triggerGameTimeS - b.triggerGameTimeS);
 }
 
 export function MomentsRail({ moments, onGoToMoment }: Props) {

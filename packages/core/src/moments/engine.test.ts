@@ -244,6 +244,17 @@ describe('moments engine — specific rules', () => {
     expect(m!.reasons).toContain('Your team aced them');
   });
 
+  it('keeps a kill in the kills theme when a tower falls inside its cluster', () => {
+    nextId = 0;
+    const rows = normalizeEvents(
+      [kill(1500, 'Me', 'E1'), ev('TurretKilled', 1506, { TurretKilled: 'Turret_T200_L1_P3_1', KillerName: 'A1', Assisters: [] })],
+      { gameId: 'g' },
+    );
+    const kills = computeMoments({ events: rows, me: ME, participants }).filter((m) => m.kind === 'own_kill');
+    expect(kills).toHaveLength(1);
+    expect(kills[0]!.theme).toBe('kills');
+  });
+
   it('ignores clusters without a trigger (other people\'s kills only)', () => {
     nextId = 0;
     const rows = normalizeEvents([kill(500, 'A1', 'E1'), kill(505, 'E2', 'A2')], { gameId: 'g' });
