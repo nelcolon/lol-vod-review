@@ -26,7 +26,7 @@ research. Read this, then `docs/PLAN.md` for the architecture. Do not re-plan.
 | `tools/event-dump` | complete | 11 tests; ran against a live game (LCU + 2999, 4 Hz/1 Hz), writes `fixtures/raw/<ts>/` |
 | `packages/core` (`@lvr/core`) | complete, **not wired to the app** | 92 tests, build + typecheck clean on Windows |
 | `apps/desktop` (`@lvr/desktop`) | shell complete on **MockBackend** | typecheck, 23 tests, prod build, 15/15 smoke checks (`npm run smoke`); screenshots in `apps/desktop/dev-assets/shot-*.png` |
-| `packages/recorder` (Rust `lvr-recorder`) | builds, works, **no README, agent stopped mid-polish** | 27 unit tests; `--self-test`-style run produced 26 s 1282x752 60 fps H.264 + AAC via Media Foundation (NVIDIA MFT), JSON events `ready/started/stats` as per contract |
+| `packages/recorder` (Rust `lvr-recorder`) | builds, works, README done; per-process audio open | 27 unit tests; `--self-test`-style run produced 26 s 1282x752 60 fps H.264 + AAC via Media Foundation (NVIDIA MFT), JSON events `ready/started/stats` as per contract |
 | `tools/bakeoff` | scripts exist, **plumbing only** | PresentMon installer, `Run-Bakeoff.ps1` (none/recorder/gfxcapture/ddagrab), `Start-TestWindow.ps1`, `Summarize-Results.ps1`; ran against a test window, never against League; **no README yet** |
 | `fixtures/raw/` (git-ignored) | 3 short dumps of one live game (mid-game only) | — |
 
@@ -42,10 +42,10 @@ Phase 0 — needs the human to play:
 2. Bake-off in a Practice Tool game, Insights Capture closed: `tools/bakeoff/Run-Bakeoff.ps1 -Backend none`,
    then `recorder`, `gfxcapture`, `ddagrab` (120 s each), Borderless and Fullscreen. Fill the table in
    `docs/adr/ADR-002-recorder-backend.md`. Answers Q1, Q2, Q9, Q10.
-3. Recorder gaps: write `packages/recorder/README.md`; confirm keyframe interval (1 s wanted) and
-   whether MF output is fragmented MP4 (if not, add post-game remux `-c copy -movflags +faststart`);
-   audio is currently **system loopback**, per-process loopback on the League PID still to do;
-   black/frozen-frame warnings exist in `detect.rs` but are untested against a real black capture.
+3. Recorder gaps: README written, keyframes (1 s), CFR, encoder GPU (4080) checked; fragmented MP4 is
+   impossible via the crate, so plain MP4 is **accepted for v1** (ADR-002). Still open: per-process loopback
+   on the League PID (audio is **system loopback**); black/frozen-frame warnings in `detect.rs` untested
+   against a real black capture.
 
 Phase 1 — wiring (pure coding, no League needed until the end):
 4. In `apps/desktop/src/main/index.ts` `createBackend()`, replace `MockBackend` with a `CoreBackend`
