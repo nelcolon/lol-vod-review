@@ -196,7 +196,7 @@ Files: `%LOCALAPPDATA%\<app>\recordings\YYYY-MM\<gameId>\segment-01.mp4`, `event
 **v1 (rule-based, live data only)** — ships in Phase 2.
 - Triggers: own death (weight 1.0), own kill 0.6, own assist 0.4, team/enemy epic monster
   (with `Stolen`), tower/inhib, ace, multikill, FirstBlood/FirstBrick folded into their twins.
-- Cluster events within 15 s into one moment; window = 45 s pre-roll (configurable 30-90)
+- Cluster events within 15 s into one moment; window = 10 s pre-roll (configurable 5-90; user choice 2026-10-29, was 45)
   to 10 s after the last event in the cluster.
 - `score = w1·self_involvement + w2·stakes + w3·participants + w4·phase + w5·death_cost`
   where stakes rank Elder/Baron > soul-point drake > first tower > other drakes/Herald/grubs,
