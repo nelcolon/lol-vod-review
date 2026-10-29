@@ -1,0 +1,21 @@
+{
+  "name": "lol-vod-review",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Auto-record League of Legends games and rank the moments worth reviewing.",
+  "workspaces": ["packages/*", "apps/*", "tools/*"],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "dev": "npm run dev -w apps/desktop",
+    "event-dump": "npm run start -w tools/event-dump"
+  },
+  "engines": { "node": ">=22" },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "@types/node": "^24.0.0"
+  }
+}
