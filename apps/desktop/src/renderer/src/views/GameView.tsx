@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Moment } from '@shared/contracts';
 import { formatTime, nextMomentIndex, prevMomentIndex } from '@shared/timeline-math';
+import { FullscreenBar } from '../components/FullscreenBar';
 import { MomentCard } from '../components/MomentCard';
 import { MomentsRail } from '../components/MomentsRail';
 import { NotesPanel } from '../components/NotesPanel';
@@ -23,6 +24,8 @@ export function GameView() {
   const navigate = useStore((s) => s.navigate);
   const saveNote = useStore((s) => s.saveNote);
   const showToast = useStore((s) => s.showToast);
+  const exportClip = useStore((s) => s.exportClip);
+  const [isFs, setIsFs] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
@@ -103,6 +106,7 @@ export function GameView() {
   useEffect(() => {
     const onFs = () => {
       if (!document.fullscreenElement) fsExitAt.current = performance.now();
+      setIsFs(document.fullscreenElement !== null && document.fullscreenElement === wrapRef.current);
     };
     document.addEventListener('fullscreenchange', onFs);
     return () => document.removeEventListener('fullscreenchange', onFs);
@@ -199,6 +203,23 @@ export function GameView() {
               // The two clicks of a double-click toggle play twice, so only fullscreen changes.
               onDoubleClick={toggleFullscreen}
             />
+            {isFs && (
+              <FullscreenBar
+                events={bundle.events}
+                durationMs={durationMs}
+                currentMs={playerState.currentMs}
+                playing={playerState.playing}
+                muted={playerState.muted}
+                rate={playerState.rate}
+                onSeek={seek}
+                onClip={() => {
+                  const t = player.currentMs;
+                  void exportClip(Math.max(0, t - 10_000), Math.min(durationMs, t + 5_000), `Clip at ${formatTime(t)}`);
+                }}
+                onBookmark={() => void addBookmark()}
+                onExit={toggleFullscreen}
+              />
+            )}
           </div>
           <div className="controls">
             <button type="button" onClick={() => player.toggle()} title="Space">
