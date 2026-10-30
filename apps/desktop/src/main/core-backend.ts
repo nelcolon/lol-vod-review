@@ -133,7 +133,7 @@ export class CoreBackend implements Backend {
       fetch: liveFetch,
       clock: realHostClock,
       scheduler: realScheduler,
-      hz: 4,
+      hz: 2,
       playerlistHz: 1,
       onFirstResponse: (s) => {
         if (this.live) this.live.gameMode = s.stats.gameMode;

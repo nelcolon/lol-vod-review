@@ -50,6 +50,8 @@ param(
     [string]$WindowTitle = "",
     [string]$Label = "",
     [int]$Fps = 60,
+    # recorder only: "light" = current defaults, "legacy" = v0.3.7 (full-frame health check every 1 s, normal priority)
+    [ValidateSet("light", "legacy")][string]$Perf = "light",
     [double]$BitrateMbps = 12,
     [int]$Cq = 23,
     [switch]$NoAudio,
@@ -183,6 +185,7 @@ switch ($Backend) {
             cmd = "start"; target = $targetJson; out = $videoPath; fps = $Fps; bitrateMbps = $BitrateMbps
             width = $null; height = $null; audio = @{ game = (-not $NoAudio); mic = $false }
             cursor = [bool]$Cursor; border = $false
+            perf = if ($Perf -eq "legacy") { @{ healthEveryS = 1; healthCrop = $false; lowPriority = $false } } else { @{} }
         } | ConvertTo-Json -Compress -Depth 4
         $backendProc.StandardInput.WriteLine($start)
         $backendProc.StandardInput.Flush()
@@ -385,7 +388,7 @@ $summary = [ordered]@{
     measureStart = $measureStart.ToString("o"); measureEnd = $measureEnd.ToString("o")
     machine = @{
         windows = (Get-CimInstance Win32_OperatingSystem).Version
-        gpu = (if ($nvsmi) { (& $nvsmi --query-gpu=name,driver_version --format=csv,noheader) } else { $null })
+        gpu = $(if ($nvsmi) { (& $nvsmi --query-gpu=name,driver_version --format=csv,noheader) } else { $null })
     }
     presentMon = $null; presentMonError = $pmError
     nvidiaSmi = $null; video = $null; backendStats = $null; warnings = @(); notes = @()

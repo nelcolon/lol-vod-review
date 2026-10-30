@@ -44,6 +44,33 @@ pub struct StartParams {
     pub border: bool,
     #[serde(default)]
     pub codec: Codec,
+    /// Knobs that trade recorder work for game performance (defaults are the light ones).
+    #[serde(default)]
+    pub perf: PerfParams,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PerfParams {
+    /// Seconds between black/frozen checks (each reads pixels back from the GPU); 0 = off.
+    #[serde(default = "default_health_every_s")]
+    pub health_every_s: f64,
+    /// Read back only a centre crop for the check instead of the whole frame.
+    #[serde(default = "default_true")]
+    pub health_crop: bool,
+    /// Below-normal CPU and GPU scheduling priority, so the game wins any contention.
+    #[serde(default = "default_true")]
+    pub low_priority: bool,
+}
+
+fn default_health_every_s() -> f64 {
+    2.0
+}
+
+impl Default for PerfParams {
+    fn default() -> Self {
+        PerfParams { health_every_s: default_health_every_s(), health_crop: true, low_priority: true }
+    }
 }
 
 fn default_fps() -> u32 {

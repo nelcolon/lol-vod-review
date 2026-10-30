@@ -61,6 +61,9 @@ pub struct EncoderCfg {
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub audio: Option<AudioFormat>,
+    /// 100 ns between health checks; 0 = off.
+    pub health_every_hns: i64,
+    pub health_crop: bool,
 }
 
 /// Everything the crate hands to `Handler::new` on the capture thread.
@@ -147,7 +150,17 @@ impl Handler {
     }
 
     fn sample_health(&mut self, frame: &mut Frame, ts: i64) {
-        let Ok(mut buf) = frame.buffer() else {
+        // A readback stalls on the GPU copy; a centre crop (a ninth of the frame, at most
+        // 640x360) is plenty to tell a black or frozen picture and costs a fraction of it.
+        let (fw, fh) = (frame.width(), frame.height());
+        let buf = if self.f.cfg.health_crop && fw >= 64 && fh >= 64 {
+            let (cw, ch) = ((fw / 3).min(640) & !1, (fh / 3).min(360) & !1);
+            let (x0, y0) = ((fw - cw) / 2, (fh - ch) / 2);
+            frame.buffer_crop(x0, y0, x0 + cw, y0 + ch)
+        } else {
+            frame.buffer()
+        };
+        let Ok(mut buf) = buf else {
             return;
         };
         let pitch = buf.row_pitch();
@@ -222,7 +235,8 @@ impl GraphicsCaptureApiHandler for Handler {
             );
         }
 
-        if ts - self.last_sample_hns >= HNS_PER_SEC {
+        let every = self.f.cfg.health_every_hns;
+        if every > 0 && ts - self.last_sample_hns >= every {
             self.last_sample_hns = ts;
             self.sample_health(frame, ts);
         }
@@ -325,6 +339,10 @@ impl Session {
         let slot: Arc<Mutex<Option<VideoEncoder>>> = Arc::new(Mutex::new(None));
         let now_t = 0.0;
 
+        if params.perf.low_priority {
+            crate::priority::lower();
+        }
+
         // Audio first: the encoder's audio settings must match what we capture.
         let audio_stop = Arc::new(AtomicBool::new(false));
         let mut audio: Option<AudioHandle> = None;
@@ -426,6 +444,8 @@ impl Session {
                 width: params.width,
                 height: params.height,
                 audio: audio.as_ref().map(|a| a.format),
+                health_every_hns: (params.perf.health_every_s.max(0.0) * HNS_PER_SEC as f64) as i64,
+                health_crop: params.perf.health_crop,
             },
             slot: slot.clone(),
             shared: shared.clone(),

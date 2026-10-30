@@ -14,6 +14,7 @@ mod detect;
 mod emit;
 mod hwenc;
 mod protocol;
+mod priority;
 mod qpc;
 mod winenum;
 
@@ -57,6 +58,7 @@ self-test options:
   --no-audio         disable system loopback audio
   --mic              mix the default microphone into the audio
   --mic-volume PCT   mic gain in percent, 0-400 (default 100)
+  --legacy-perf      v0.3.7 behaviour: full-frame health check every 1 s, normal priority
   --cursor           include the cursor
   --border           keep the yellow WGC border
 "
@@ -276,6 +278,11 @@ fn self_test(args: &[String], emitter: Emitter) -> i32 {
         cursor: args.iter().any(|a| a == "--cursor"),
         border: args.iter().any(|a| a == "--border"),
         codec: if args.iter().any(|a| a == "--hevc") { Codec::Hevc } else { Codec::H264 },
+        perf: if args.iter().any(|a| a == "--legacy-perf") {
+            protocol::PerfParams { health_every_s: 1.0, health_crop: false, low_priority: false }
+        } else {
+            protocol::PerfParams::default()
+        },
     };
 
     let mut session = match Session::start(params, emitter.clone()) {
