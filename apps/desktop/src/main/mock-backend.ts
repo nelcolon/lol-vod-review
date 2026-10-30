@@ -22,12 +22,15 @@ import type {
   MomentKind,
   Note,
   NoteInput,
+  PlayState,
   RecorderStatus,
   Settings,
   Theme,
 } from '../shared/contracts';
 import { CAUSE_TAGS, queueName } from '../shared/contracts';
 import type { Backend } from './backend';
+import { computePlayState, involvedIn, type SavedPlayer } from './core/playstate';
+import type { DdragonData } from './core/ddragon';
 
 const LOADING_OFFSET_S = 4; // video time of gameTime 0
 const PRE_ROLL_S = 12;
@@ -558,6 +561,53 @@ export class MockBackend implements Backend {
     this.saveState();
   }
 
+  /** Synthetic game state: everyone in the game's kills, with fixed builds; you drink a potion during each play. */
+  async getPlayState(gameId: string, momentId: string): Promise<PlayState | null> {
+    const b = this.games.get(gameId);
+    const m = b?.moments.find((x) => x.id === momentId);
+    if (!b || !m) return null;
+    const me = b.game.myChampion;
+    const kills = b.events.filter((e) => e.name === 'ChampionKill');
+    const names = new Set<string>();
+    const enemies = new Set<string>();
+    for (const e of kills) {
+      const [k, v, as] = [String(e.payload['KillerName']), String(e.payload['VictimName']), (e.payload['Assisters'] as string[]) ?? []];
+      [k, v, ...as].forEach((n) => names.add(n));
+      if (v === MOCK_ME) [k, ...as].forEach((n) => enemies.add(n));
+      if (k === MOCK_ME) enemies.add(v);
+    }
+    const builds = [[3078, 3047, 6333, 2003], [6655, 3020, 3157], [3031, 3006, 3094, 2055], [3071, 3111], [6653, 3158, 3165]];
+    const player = (name: string, i: number, extraPots: number): SavedPlayer => ({
+      name,
+      champion: name === MOCK_ME ? me : (name.split(' ')[0] ?? name),
+      championKey: name === MOCK_ME ? me.replace(/[^A-Za-z]/g, '') : (name.split(' ')[0] ?? name),
+      team: enemies.has(name) ? 'CHAOS' : 'ORDER',
+      level: 9 + (i % 4),
+      isDead: false,
+      kills: i % 5,
+      deaths: (i * 3) % 4,
+      assists: (i * 7) % 6,
+      items: [...builds[i % builds.length]!.map((id, slot) => ({ id, count: 1, slot })), ...(name === MOCK_ME ? [{ id: 2003, count: 1 + extraPots, slot: 5 }] : []), { id: 3340, count: 1, slot: 6 }],
+      spells: [{ name: 'Flash', key: 'SummonerFlash' }, { name: i % 2 ? 'Ignite' : 'Teleport', key: i % 2 ? 'SummonerDot' : 'SummonerTeleport' }],
+    });
+    const list = [...names];
+    const t = m.triggerGameTimeS;
+    const dd: DdragonData = { version: '15.20.1', champions: {}, items: MOCK_ITEMS };
+    const ids = new Set(m.eventIds);
+    return computePlayState({
+      momentId,
+      triggerS: t,
+      beforeS: t - 10,
+      afterS: t + (m.tEndMs - m.tTriggerMs) / 1000,
+      involved: involvedIn(b.events.filter((e) => ids.has(e.id))),
+      me: { name: MOCK_ME, team: 'ORDER' },
+      log: { snaps: [{ t: t - 10, players: list.map((n, i) => player(n, i, 1)) }, { t, players: list.map((n, i) => player(n, i, 0)) }], gold: [{ t, gold: 1340 }] },
+      participants: [],
+      lcu: null,
+      dd,
+    });
+  }
+
   async getClip(id: string): Promise<ClipBundle | null> {
     const clip = this.state.clips.find((c) => c.id === id);
     const b = clip ? this.games.get(clip.gameId) : undefined;
@@ -680,3 +730,16 @@ export class MockBackend implements Backend {
     }
   }
 }
+
+const MOCK_ME = 'Lich';
+const MOCK_ITEMS: DdragonData['items'] = Object.fromEntries(
+  (
+    [
+      [3078, 'Trinity Force', 3333], [3047, 'Plated Steelcaps', 1200], [6333, "Death's Dance", 3300], [2003, 'Health Potion', 50, true],
+      [6655, "Luden's Companion", 2900], [3020, "Sorcerer's Shoes", 1100], [3157, "Zhonya's Hourglass", 3250], [3031, 'Infinity Edge', 3450],
+      [3006, "Berserker's Greaves", 1100], [3094, 'Rapid Firecannon', 2650], [2055, 'Control Ward', 75, true], [3071, 'Black Cleaver', 3000],
+      [3111, "Mercury's Treads", 1250], [6653, "Liandry's Torment", 3000], [3158, 'Ionian Boots of Lucidity', 900], [3165, 'Morellonomicon', 2850],
+      [3340, 'Stealth Ward', 0, false, true],
+    ] as Array<[number, string, number, boolean?, boolean?]>
+  ).map(([id, name, gold, consumable, trinket]) => [String(id), { name, gold, consumable: Boolean(consumable), trinket: Boolean(trinket) }]),
+);

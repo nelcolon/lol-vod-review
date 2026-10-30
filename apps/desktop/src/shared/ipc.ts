@@ -2,6 +2,7 @@ import type {
   CauseTag,
   Clip,
   ClipBundle,
+  PlayState,
   ClipExportResult,
   ClipPatch,
   Game,
@@ -22,6 +23,7 @@ export const IPC = {
   markReviewed: 'lvr:markReviewed',
   exportClip: 'lvr:exportClip',
   getClip: 'lvr:getClip',
+  getPlayState: 'lvr:getPlayState',
   updateClip: 'lvr:updateClip',
   deleteClip: 'lvr:deleteClip',
   openClip: 'lvr:openClip',
@@ -47,6 +49,7 @@ export interface LvrApi {
   /** Cut a clip and open it in its own window. */
   exportClip(gameId: string, tInMs: number, tOutMs: number, title?: string): Promise<ClipExportResult>;
   getClip(id: string): Promise<ClipBundle | null>;
+  getPlayState(gameId: string, momentId: string): Promise<PlayState | null>;
   /** Range changes re-cut the file. */
   updateClip(id: string, patch: ClipPatch): Promise<Clip>;
   deleteClip(id: string): Promise<void>;

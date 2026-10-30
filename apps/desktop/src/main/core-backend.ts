@@ -10,7 +10,7 @@
  * video (replay/spectate drops objective events, so the live log is the source of truth).
  */
 import { appendFileSync, mkdirSync, rmSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import {
   ClockMapper,
   GameStore,
@@ -31,11 +31,13 @@ import {
   type Team,
 } from '@lvr/core';
 import type { Backend } from './backend';
+import { Ddragon } from './core/ddragon';
 import { destroyAgents, liveFetch } from './core/http';
 import { LcuWatcher, type LcuSessionInfo } from './core/lcu';
 import { kdaOf, mapClip, mapEvent, mapGame, mapMoment, mapNote, mapSegment, type Me } from './core/mapping';
+import { computePlayState, involvedIn, readPlayersLog, type LcuTimeline, type SavedPlayer } from './core/playstate';
 import { RecorderSidecar, type StoppedEvent } from './core/recorder';
-import type { CauseTag, Clip, ClipBundle, Game, GameBundle, Note, NoteInput, RecorderStatus, Settings } from '../shared/contracts';
+import type { CauseTag, Clip, ClipBundle, Game, GameBundle, Note, NoteInput, PlayState, RecorderStatus, Settings } from '../shared/contracts';
 import { BITRATE_PRESETS, CAUSE_TAGS } from '../shared/contracts';
 
 export interface CoreBackendOptions {
@@ -43,6 +45,8 @@ export interface CoreBackendOptions {
   recordingsDir: string;
   recorderExe: string;
   mediaRoots: string[];
+  /** Data Dragon cache (item names/costs). */
+  ddragonDir: string;
 }
 
 /** Live-game state that only exists between LOADING and the end of post-processing. */
@@ -55,6 +59,9 @@ interface LiveGame {
   events: LiveEvent[];
   snapshots: PlayerSnapshot[];
   lastPlayers: PlayerListSnapshot | null;
+  /** Last players line written to players.jsonl, to only write changes. */
+  playersDigest: string;
+  lastGold: number | null;
   activePlayer: string | null;
   gameMode: string | null;
   queueId: number | null;
@@ -92,8 +99,11 @@ export class CoreBackend implements Backend {
   private readonly listeners = new Set<(s: RecorderStatus) => void>();
   private retryTimer: NodeJS.Timeout | null = null;
   private discarding = false;
+  private readonly ddragon: Ddragon;
 
-  constructor(private readonly opts: CoreBackendOptions) {}
+  constructor(private readonly opts: CoreBackendOptions) {
+    this.ddragon = new Ddragon(opts.ddragonDir);
+  }
 
   // --- lifecycle wiring ---------------------------------------------------------------------
 
@@ -151,6 +161,7 @@ export class CoreBackend implements Backend {
           gameTime: snap.gameTime,
           players: snap.players.map((p) => ({ name: p.name, isDead: p.isDead, respawnTimer: p.respawnTimer, level: p.level })),
         });
+        this.logPlayers(snap);
       },
       onActivePlayer: (name) => {
         if (this.live) this.live.activePlayer = name;
@@ -235,6 +246,8 @@ export class CoreBackend implements Backend {
       events: [],
       snapshots: [],
       lastPlayers: null,
+      playersDigest: '',
+      lastGold: null,
       activePlayer: null,
       gameMode: null,
       queueId: null,
@@ -359,6 +372,47 @@ export class CoreBackend implements Backend {
       );
     } catch (e) {
       console.warn(`[events] log write failed: ${(e as Error).message}`);
+    }
+  }
+
+  /** players.jsonl: everyone's items/level/score when they change, and my gold (game state panel). */
+  private logPlayers(snap: PlayerListSnapshot): void {
+    const g = this.live;
+    if (!g || !this.runner.context.recordingEnabled || snap.gameTime <= 0) return;
+    const players: SavedPlayer[] = snap.players.map((p) => ({
+      name: p.name,
+      champion: p.championName,
+      championKey: p.championKey,
+      team: p.team,
+      level: p.level,
+      isDead: p.isDead,
+      kills: p.scores?.kills ?? 0,
+      deaths: p.scores?.deaths ?? 0,
+      assists: p.scores?.assists ?? 0,
+      items: p.items,
+      spells: p.spells,
+    }));
+    const t = Math.round(snap.gameTime * 10) / 10;
+    try {
+      this.ensureGameRow(g);
+      const file = join(g.dir!, 'players.jsonl');
+      const digest = JSON.stringify(players);
+      if (digest !== g.playersDigest) {
+        g.playersDigest = digest;
+        appendFileSync(file, `${JSON.stringify({ t, players })}\n`);
+      }
+      void liveFetch('https://127.0.0.1:2999/liveclientdata/activeplayer')
+        .then(async (r) => (r.ok ? ((await r.json()) as { currentGold?: unknown }).currentGold : null))
+        .then((gold) => {
+          if (typeof gold !== 'number' || this.live !== g) return;
+          const rounded = Math.floor(gold);
+          if (rounded === g.lastGold) return;
+          g.lastGold = rounded;
+          appendFileSync(file, `${JSON.stringify({ t, gold: rounded })}\n`);
+        })
+        .catch(() => undefined);
+    } catch (e) {
+      console.warn(`[players] log write failed: ${(e as Error).message}`);
     }
   }
 
@@ -580,6 +634,54 @@ export class CoreBackend implements Backend {
       title: clip.title || null,
     });
     return mapClip(row);
+  }
+
+  async getPlayState(gameId: string, momentId: string): Promise<PlayState | null> {
+    const gid = Number(gameId);
+    const game = this.store.getGameRow(gid);
+    const m = this.store.getMoment(Number(momentId));
+    if (!game || !m || m.game_id !== gid) return null;
+    const meRow = this.store.getTimeline<{ name: string; team: string }>(gid, 'lvr_me')?.data ?? null;
+    const segment = this.store.listSegments(gid)[0];
+    const ids = new Set(m.event_ids);
+    const events = this.store.listEvents(gid).filter((e) => ids.has(e.event_id));
+    const lcu = await this.lcuTimeline(gid, game.game_id);
+    const dd = await this.ddragon.forPatch(lcu?.game.gameVersion ?? game.patch);
+    const triggerS = m.t_trigger_s;
+    return computePlayState({
+      momentId,
+      triggerS,
+      beforeS: Math.max(0, triggerS - (this.settings?.preRollS ?? 10)),
+      afterS: triggerS + Math.max(0, (m.t_end_ms ?? 0) - (m.t_trigger_ms ?? 0)) / 1000,
+      involved: involvedIn(events),
+      me: meRow,
+      log: segment ? readPlayersLog(join(dirname(segment.path), 'players.jsonl')) : { snaps: [], gold: [] },
+      participants: this.store.listParticipants(gid).map((p) => ({ name: p.riot_id_name, champion: p.champion ?? '', team: p.team === 'CHAOS' ? 'CHAOS' : 'ORDER' })),
+      lcu,
+      dd,
+    });
+  }
+
+  /** Post-game timeline from the League client, fetched once and kept in the DB. */
+  private async lcuTimeline(gid: number, riotGameId: string): Promise<LcuTimeline | null> {
+    const cached = this.store.getTimeline<LcuTimeline>(gid, 'lcu_timeline')?.data;
+    if (cached) return cached;
+    if (!/^\d+$/.test(riotGameId)) return null; // local-… ids: no Riot game id known
+    const [tl, game] = await Promise.all([
+      this.lcu.get(`/lol-match-history/v1/game-timelines/${riotGameId}`),
+      this.lcu.get(`/lol-match-history/v1/games/${riotGameId}`),
+    ]);
+    if (tl?.status !== 200 || game?.status !== 200) return null;
+    try {
+      const data: LcuTimeline = { timeline: JSON.parse(tl.body) as LcuTimeline['timeline'], game: JSON.parse(game.body) as LcuTimeline['game'] };
+      if (!data.timeline.frames?.length || !Array.isArray(data.game.participants)) return null; // not published yet
+      this.store.putTimeline(gid, 'lcu_timeline', data);
+      const patch = data.game.gameVersion?.split('.').slice(0, 2).join('.');
+      if (patch) this.store.updateGame(gid, { patch });
+      return data;
+    } catch {
+      return null;
+    }
   }
 
   async getClip(id: string): Promise<ClipBundle | null> {

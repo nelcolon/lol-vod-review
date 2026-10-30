@@ -229,6 +229,69 @@ export interface ClipBundle {
   events: EventRow[];
 }
 
+/** One inventory entry, enriched from Data Dragon. */
+export interface PlayItem {
+  id: number;
+  name: string;
+  count: number;
+  /** Total item cost (one unit) from Data Dragon; 0 when unknown. */
+  gold: number;
+}
+
+export interface PlayItemChange {
+  id: number;
+  name: string;
+  /** Units used/lost (on `used`) or gained (on `gained`). */
+  count: number;
+}
+
+export type PlayRole = 'killer' | 'victim' | 'assist';
+
+export interface PlayPlayer {
+  name: string;
+  champion: string;
+  /** Data Dragon champion id for the icon ('' when unknown). */
+  championKey: string;
+  team: 'ORDER' | 'CHAOS';
+  isMe: boolean;
+  roles: PlayRole[];
+  level: number;
+  levelBefore: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  /** Inventory at the trigger (the death/kill). */
+  items: PlayItem[];
+  /** Sum of item costs at the trigger, wards and consumables excluded. */
+  itemGold: number;
+  spells: Array<{ name: string; key: string }>;
+  /** Used during the play: potions, elixirs, Control Wards, Stopwatch. */
+  used: PlayItemChange[];
+  /** Bought during the play (components that went into them are left out). */
+  bought: PlayItemChange[];
+  /** Gone without a purchase: sold. */
+  sold: PlayItemChange[];
+  /** Total gold earned at the last full minute (League client timeline), null when unavailable. */
+  totalGold: number | null;
+}
+
+/** Everyone's state around one moment. */
+export interface PlayState {
+  momentId: string;
+  triggerS: number;
+  beforeS: number;
+  afterS: number;
+  /** Data Dragon version for icons, null when offline. */
+  ddragonVersion: string | null;
+  /** False for games recorded before items were saved (only minute gold is shown then). */
+  hasItems: boolean;
+  /** Your unspent gold at the trigger, when recorded. */
+  myGold: number | null;
+  /** Minute of the League client timeline frame used for gold, null when unavailable. */
+  goldMinute: number | null;
+  players: PlayPlayer[];
+}
+
 export type BitratePreset = '1080p60_12' | '1080p30_8' | '1440p60_20';
 
 export const BITRATE_PRESETS: Record<BitratePreset, { label: string; width: number; height: number; fps: number; mbps: number }> = {

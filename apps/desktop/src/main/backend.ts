@@ -2,6 +2,7 @@ import type {
   CauseTag,
   Clip,
   ClipBundle,
+  PlayState,
   Game,
   GameBundle,
   Note,
@@ -39,6 +40,7 @@ export interface Backend {
   /** Persist a clip row after the file has been written by the clip pipeline. */
   addClip(clip: Omit<Clip, 'id' | 'createdAt' | 'drawings' | 'description'>): Promise<Clip>;
   getClip(id: string): Promise<ClipBundle | null>;
+  getPlayState(gameId: string, momentId: string): Promise<PlayState | null>;
   /** Persist edited fields (the caller has already re-cut the file when the range changed). */
   updateClip(id: string, patch: Partial<Pick<Clip, 'title' | 'description' | 'tInMs' | 'tOutMs' | 'path' | 'drawings'>>): Promise<Clip>;
   /** Returns the deleted clip (so the caller can remove its file). */

@@ -17,6 +17,7 @@ const api: LvrApi = {
   markReviewed: (momentId: string) => ipcRenderer.invoke(IPC.markReviewed, momentId),
   exportClip: (gameId: string, tInMs: number, tOutMs: number, title?: string) => ipcRenderer.invoke(IPC.exportClip, gameId, tInMs, tOutMs, title),
   getClip: (id: string) => ipcRenderer.invoke(IPC.getClip, id),
+  getPlayState: (gameId: string, momentId: string) => ipcRenderer.invoke(IPC.getPlayState, gameId, momentId),
   updateClip: (id: string, patch: ClipPatch) => ipcRenderer.invoke(IPC.updateClip, id, patch),
   deleteClip: (id: string) => ipcRenderer.invoke(IPC.deleteClip, id),
   openClip: (id: string) => ipcRenderer.invoke(IPC.openClip, id),

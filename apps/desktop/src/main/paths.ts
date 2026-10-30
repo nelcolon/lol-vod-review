@@ -44,6 +44,10 @@ export function recorderPath(): string {
   return resolve(repoRoot(), 'packages', 'recorder', 'target', 'release', 'lvr-recorder.exe');
 }
 
+export function ddragonDir(): string {
+  return resolve(app.getPath('userData'), 'ddragon');
+}
+
 export function dbPath(): string {
   return resolve(app.getPath('userData'), 'lvr.sqlite');
 }

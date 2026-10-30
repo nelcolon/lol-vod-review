@@ -60,6 +60,8 @@ const SCRIPT = String.raw`
       const markers = document.querySelectorAll('.marker').length;
       const moments = document.querySelectorAll('.moment').length;
       check('timeline markers + rail moments rendered', markers > 5 && moments > 3, { markers, moments });
+      const ps = await window.lvr.getPlayState(bundle.game.id, bundle.moments[0].id);
+      check('game state for a moment (players + items)', ps && ps.hasItems && ps.players.length > 1 && ps.players.some((p) => p.items.length > 0), ps && { players: ps.players.length, involved: ps.players.filter((p) => p.roles.length).length });
     }
   } catch (err) {
     check('script threw', false, String(err && err.stack || err));

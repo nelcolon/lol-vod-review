@@ -140,6 +140,38 @@ describe('LiveClientPoller', () => {
     expect(h.playerlists[1]!.activePlayerName).toBe('Alice');
   });
 
+  it('keeps items, summoner spells and the Data Dragon champion id', async () => {
+    const h = harness(liveRoute(() => 50, () => [], {
+      '/playerlist': ok([
+        {
+          riotIdGameName: 'Bob',
+          championName: 'Wukong',
+          rawChampionName: 'game_character_displayname_MonkeyKing',
+          team: 'CHAOS',
+          items: [
+            { itemID: 2003, count: 2, slot: 0, consumable: true },
+            { itemID: 3078, count: 1, slot: 1 },
+          ],
+          summonerSpells: {
+            summonerSpellOne: { displayName: 'Flash', rawDisplayName: 'GeneratedTip_SummonerSpell_SummonerFlash_DisplayName' },
+            summonerSpellTwo: { displayName: 'Unleashed Teleport', rawDisplayName: 'GeneratedTip_SummonerSpell_S12_SummonerTeleportUpgrade_DisplayName' },
+          },
+        },
+      ]),
+    }));
+    await h.poller.tick();
+    const p = h.playerlists[0]!.players[0]!;
+    expect(p.championKey).toBe('MonkeyKing');
+    expect(p.items).toEqual([
+      { id: 2003, count: 2, slot: 0 },
+      { id: 3078, count: 1, slot: 1 },
+    ]);
+    expect(p.spells).toEqual([
+      { name: 'Flash', key: 'SummonerFlash' },
+      { name: 'Unleashed Teleport', key: 'SummonerTeleportUpgrade' },
+    ]);
+  });
+
   it('resolves the active player name once, and flags spectator mode on 400', async () => {
     const h = harness(liveRoute(() => 5, () => []));
     await h.poller.tick();

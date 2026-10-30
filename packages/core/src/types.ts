@@ -147,6 +147,12 @@ export interface PlayerListEntry {
     creepScore: number;
     wardScore: number;
   };
+  rawChampionName?: string;
+  items?: Array<{ itemID: number; count?: number; slot?: number; displayName?: string; consumable?: boolean }>;
+  summonerSpells?: {
+    summonerSpellOne?: { displayName?: string; rawDisplayName?: string };
+    summonerSpellTwo?: { displayName?: string; rawDisplayName?: string };
+  };
 }
 
 /** Raw-ish `/liveclientdata/eventdata` body. */

@@ -64,6 +64,17 @@ export interface PlayerState {
   respawnTimer: number;
   position: string;
   scores: { kills: number; deaths: number; assists: number; creepScore: number; wardScore: number } | null;
+  /** Data Dragon champion id from `rawChampionName` (`MonkeyKing` for Wukong); '' when unknown. */
+  championKey: string;
+  items: PlayerItem[];
+  /** Summoner spells, slot 1 then 2. `key` is the Data Dragon spell id (`SummonerFlash`) when derivable. */
+  spells: Array<{ name: string; key: string }>;
+}
+
+export interface PlayerItem {
+  id: number;
+  count: number;
+  slot: number;
 }
 
 export interface PlayerListSnapshot {
@@ -282,6 +293,14 @@ export class LiveClientPoller {
         respawnTimer: typeof p.respawnTimer === 'number' ? p.respawnTimer : 0,
         position: typeof p.position === 'string' ? p.position : '',
         scores: p.scores ?? null,
+        championKey: typeof p.rawChampionName === 'string' ? p.rawChampionName.replace(/^game_character_displayname_/, '') : '',
+        items: (Array.isArray(p.items) ? p.items : [])
+          .filter((i) => typeof i?.itemID === 'number')
+          .map((i) => ({ id: i.itemID, count: typeof i.count === 'number' ? i.count : 1, slot: typeof i.slot === 'number' ? i.slot : -1 })),
+        spells: [p.summonerSpells?.summonerSpellOne, p.summonerSpells?.summonerSpellTwo].map((s) => ({
+          name: typeof s?.displayName === 'string' ? s.displayName : '',
+          key: /SummonerSpell_(?:S\d+_)?(\w+?)_DisplayName/.exec(s?.rawDisplayName ?? '')?.[1] ?? '',
+        })),
       });
     }
     this.opts.onPlayerList({

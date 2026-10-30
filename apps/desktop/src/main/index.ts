@@ -5,7 +5,7 @@ import { installMediaProtocol, registerMediaScheme } from './media-protocol';
 import { CoreBackend } from './core-backend';
 import { MockBackend } from './mock-backend';
 import { registerIpc } from './ipc';
-import { clipsDir, dbPath, devAssetsDir, mockStatePath, recorderPath, recordingsDir, sampleVideoPath, settingsPath } from './paths';
+import { clipsDir, dbPath, devAssetsDir, mockStatePath, ddragonDir, recorderPath, recordingsDir, sampleVideoPath, settingsPath } from './paths';
 import { SettingsStore } from './settings';
 import { maybeRunSmoke } from './smoke';
 import { AppTray } from './tray';
@@ -31,7 +31,7 @@ function createBackend(): Backend {
   if (process.env['LVR_MOCK'] === '1' || process.env['LVR_SMOKE'] === '1') {
     return new MockBackend({ sampleVideo: sampleVideoPath(), statePath: mockStatePath(), mediaRoots: roots });
   }
-  return new CoreBackend({ dbPath: dbPath(), recordingsDir: recordingsDir(), recorderExe: recorderPath(), mediaRoots: roots });
+  return new CoreBackend({ dbPath: dbPath(), recordingsDir: recordingsDir(), recorderExe: recorderPath(), mediaRoots: roots, ddragonDir: ddragonDir() });
 }
 
 async function main(): Promise<void> {
@@ -217,7 +217,7 @@ function installCsp(): void {
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: lvr-media:",
+    "img-src 'self' data: lvr-media: https://ddragon.leagueoflegends.com",
     'media-src lvr-media: blob:',
     "font-src 'self'",
     "connect-src 'self'",

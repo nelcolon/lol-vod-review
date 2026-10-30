@@ -4,6 +4,7 @@ import { formatTime, nextMomentIndex, prevMomentIndex } from '@shared/timeline-m
 import { MomentCard } from '../components/MomentCard';
 import { MomentsRail } from '../components/MomentsRail';
 import { NotesPanel } from '../components/NotesPanel';
+import { PlayStatePanel } from '../components/PlayStatePanel';
 import { Timeline } from '../components/Timeline';
 import { formatDate, RESULT_LABEL, roleLabel } from '../lib/format';
 import { player } from '../lib/player';
@@ -243,7 +244,10 @@ export function GameView() {
           />
 
           {selected ? (
-            <MomentCard moment={selected} notes={bundle.notes} currentMs={playerState.currentMs} onSeek={seek} onReplay={goToMoment} />
+            <>
+              <MomentCard moment={selected} notes={bundle.notes} currentMs={playerState.currentMs} onSeek={seek} onReplay={goToMoment} />
+              <PlayStatePanel gameId={bundle.game.id} moment={selected} />
+            </>
           ) : (
             <div className="moment-card empty muted">Pick a moment on the right (or press ] ) to start the review.</div>
           )}

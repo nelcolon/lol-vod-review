@@ -91,6 +91,9 @@ export function registerIpc({ backend, settings, getWindow, openClipWindow }: Ip
   });
 
   ipcMain.handle(IPC.getClip, (_e, id: unknown) => backend.getClip(assertString(id, 'id')));
+  ipcMain.handle(IPC.getPlayState, (_e, gameId: unknown, momentId: unknown) =>
+    backend.getPlayState(assertString(gameId, 'gameId'), assertString(momentId, 'momentId')),
+  );
   ipcMain.handle(IPC.openClip, (_e, id: unknown) => openClipWindow(assertString(id, 'id')));
 
   ipcMain.handle(IPC.updateClip, async (_e, id: unknown, patch: unknown) => {

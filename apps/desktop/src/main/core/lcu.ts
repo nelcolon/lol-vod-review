@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { DEFAULT_LOCKFILE_PATH, LCU_ENDPOINTS, lcuAuthHeader, lcuBaseUrl, parseLockfile, type Lockfile } from '@lvr/schema';
-import { lcuGet } from './http';
+import { lcuGet, type HttpResult } from './http';
 
 export interface LcuSessionInfo {
   gameId: string | null;
@@ -39,6 +39,17 @@ export class LcuWatcher {
     if (this.timer) return;
     this.timer = setInterval(() => void this.tick(), 1000);
     void this.tick();
+  }
+
+  /** One read-only GET while the client is up; null when it is not. */
+  async get(path: string): Promise<HttpResult | null> {
+    const lf = this.lockfile;
+    if (!lf) return null;
+    try {
+      return await lcuGet(lcuBaseUrl(lf), lcuAuthHeader(lf), path);
+    } catch {
+      return null;
+    }
   }
 
   stop(): void {
