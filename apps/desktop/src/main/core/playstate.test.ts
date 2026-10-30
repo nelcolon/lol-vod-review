@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computePlayState, diffItems, involvedIn, killsIn, parsePlayersLog, type SavedPlayer } from './playstate';
+import { computePlayState, diffItems, involvedIn, killsIn, parsePlayersLog, resultFromLcu, type SavedPlayer } from './playstate';
 import type { DdragonData } from './ddragon';
 
 const dd: DdragonData = {
@@ -140,3 +140,30 @@ describe('playstate', () => {
     ]);
   });
 });
+
+describe('resultFromLcu', () => {
+  const game = {
+    participants: [
+      { participantId: 1, championId: 67, teamId: 100, stats: { win: false } },
+      { participantId: 6, championId: 51, teamId: 200, stats: { win: true } },
+    ],
+    participantIdentities: [
+      { participantId: 1, player: { gameName: 'Barren Wuffet' } },
+      { participantId: 6, player: { gameName: 'Someone' } },
+    ],
+    teams: [
+      { teamId: 100, win: 'Fail' },
+      { teamId: 200, win: 'Win' },
+    ],
+  };
+  it('reads my win flag by name, ignoring the tag', () => {
+    expect(resultFromLcu(game, { name: 'Barren Wuffet#LAN', team: 'ORDER' })).toBe('Lose');
+  });
+  it('falls back to my team when my name is not found', () => {
+    expect(resultFromLcu(game, { name: 'Unknown', team: 'CHAOS' })).toBe('Win');
+  });
+  it('returns null when match history has no result', () => {
+    expect(resultFromLcu({ participants: [], participantIdentities: [] }, { name: 'x', team: 'ORDER' })).toBeNull();
+  });
+});
+

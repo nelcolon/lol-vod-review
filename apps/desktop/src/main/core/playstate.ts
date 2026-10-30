@@ -72,9 +72,26 @@ export interface LcuTimeline {
   timeline: { frames: Array<{ timestamp: number; participantFrames: Record<string, { totalGold?: number }> }> };
   game: {
     gameVersion?: string;
-    participants: Array<{ participantId: number; championId: number; teamId: number }>;
+    participants: Array<{ participantId: number; championId: number; teamId: number; stats?: { win?: boolean } }>;
     participantIdentities: Array<{ participantId: number; player: { gameName?: string } }>;
+    teams?: Array<{ teamId: number; win?: string }>;
   };
+}
+
+/**
+ * Win/Lose from the League client's match history, for games whose GameEnd event never
+ * arrived (ARAM: Mayhem ends without one). Matched by my name, else by my team.
+ */
+export function resultFromLcu(game: LcuTimeline['game'], me: { name: string; team: string }): 'Win' | 'Lose' | null {
+  const base = (n: string) => n.split('#')[0]!.trim().toLowerCase();
+  const id = game.participantIdentities.find((i) => i.player.gameName && base(i.player.gameName) === base(me.name));
+  const p = id && game.participants.find((x) => x.participantId === id.participantId);
+  if (typeof p?.stats?.win === 'boolean') return p.stats.win ? 'Win' : 'Lose';
+  const teamId = p?.teamId ?? (me.team === 'CHAOS' ? 200 : 100);
+  const t = game.teams?.find((x) => x.teamId === teamId);
+  if (t?.win === 'Win') return 'Win';
+  if (t?.win === 'Fail') return 'Lose';
+  return null;
 }
 
 /** Total gold per player name (and per champion id, as a fallback) at the last full minute before `t`. */

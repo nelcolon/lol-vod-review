@@ -420,6 +420,8 @@ export interface RecorderStatus {
   enabled: boolean;
   /** Free-form detail for the status bar ("remuxing", "waiting for LCU", ...). */
   detail: string | null;
+  /** Bumped when stored games change outside a recording (e.g. a result filled in later). */
+  libraryRev?: number;
 }
 
 export interface GameBundle {

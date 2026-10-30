@@ -35,7 +35,7 @@ import { Ddragon } from './core/ddragon';
 import { destroyAgents, liveFetch } from './core/http';
 import { LcuWatcher, type LcuSessionInfo } from './core/lcu';
 import { kdaOf, mapClip, mapEvent, mapGame, mapMoment, mapNote, mapSegment, type Me } from './core/mapping';
-import { computePlayState, involvedIn, killsIn, readPlayersLog, type LcuTimeline, type SavedPlayer } from './core/playstate';
+import { computePlayState, involvedIn, killsIn, readPlayersLog, type LcuTimeline, type SavedPlayer, resultFromLcu } from './core/playstate';
 import { RecorderSidecar, type StoppedEvent } from './core/recorder';
 import type { CauseTag, Clip, ClipBundle, Game, GameBundle, Note, NoteInput, PlayState, RecorderStatus, Settings } from '../shared/contracts';
 import { BITRATE_PRESETS, CAUSE_TAGS, OPPONENT_ROLES, OTHER_MODES } from '../shared/contracts';
@@ -468,6 +468,19 @@ export class CoreBackend implements Backend {
         });
       });
       console.log(`[post] game ${rowId}: ${rows.length} events, me=${me?.name ?? '?'}`);
+      if (result !== 'Win' && result !== 'Lose') {
+        // No GameEnd (ARAM: Mayhem): ask match history once it is published.
+        for (const delay of [15_000, 60_000, 180_000]) {
+          setTimeout(() => {
+            this.resultTried.delete(rowId);
+            void this.fillResult(rowId).then((ok) => {
+              if (!ok) return;
+              this.status = { ...this.status, libraryRev: (this.status.libraryRev ?? 0) + 1 };
+              this.emit();
+            });
+          }, delay);
+        }
+      }
     } catch (e) {
       console.error(`[post] failed: ${(e as Error).stack ?? String(e)}`);
       if (g?.rowId) this.store.updateGame(g.rowId, { status: 'error' });
@@ -578,7 +591,11 @@ export class CoreBackend implements Backend {
   }
 
   async listGames(): Promise<Game[]> {
-    const rows = this.store.listGames({ status: ['recording', 'processing', 'ready', 'error'] });
+    let rows = this.store.listGames({ status: ['recording', 'processing', 'ready', 'error'] });
+    const missing = rows.filter((r) => r.status === 'ready' && r.result !== 'Win' && r.result !== 'Lose');
+    if (missing.length && (await Promise.all(missing.map((r) => this.fillResult(r.id)))).some(Boolean)) {
+      rows = this.store.listGames({ status: ['recording', 'processing', 'ready', 'error'] });
+    }
     return Promise.all(rows.map(async (row) => ({ ...mapGame(row, kdaOf(this.store.listEvents(row.id), this.meOf(row.id)), row.size_bytes), ...(await this.lineup(row)) })));
   }
 
@@ -686,6 +703,24 @@ export class CoreBackend implements Backend {
       lcu,
       dd,
     });
+  }
+
+  private readonly resultTried = new Map<number, number>();
+
+  /** Fill a missing Win/Lose from match history; at most one try per game per minute. */
+  private async fillResult(gid: number): Promise<boolean> {
+    const last = this.resultTried.get(gid) ?? 0;
+    if (Date.now() - last < 60_000) return false;
+    this.resultTried.set(gid, Date.now());
+    const row = this.store.getGame(gid)?.game;
+    const me = this.store.getTimeline<{ name: string; team: string }>(gid, 'lvr_me')?.data;
+    if (!row || !me || row.result === 'Win' || row.result === 'Lose') return false;
+    const lcu = await this.lcuTimeline(gid, row.game_id).catch(() => null);
+    const result = lcu ? resultFromLcu(lcu.game, me) : null;
+    if (!result) return false;
+    this.store.updateGame(gid, { result });
+    console.log(`[post] game ${gid}: result ${result} from match history`);
+    return true;
   }
 
   /** Post-game timeline from the League client, fetched once and kept in the DB. */

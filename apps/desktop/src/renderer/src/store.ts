@@ -139,7 +139,12 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setRecorder(recorder) {
+    const prev = get().recorder;
     set({ recorder });
+    // a game finished or a stored game changed: refresh the library
+    const finished = prev && prev.state !== 'idle' && recorder.state === 'idle';
+    const changed = prev && (recorder.libraryRev ?? 0) !== (prev.libraryRev ?? 0);
+    if ((finished || changed) && get().route.view === 'library') void get().loadGames();
   },
   setSettingsFromPush(settings) {
     set({ settings });
