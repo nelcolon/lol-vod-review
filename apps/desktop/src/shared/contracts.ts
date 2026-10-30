@@ -408,6 +408,15 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export type RecorderState = 'idle' | 'recording' | 'post_processing';
 
+export interface UpdateStatus {
+  /** dev = not an installed build; latest = up to date; ready = downloaded, restart to install. */
+  state: 'idle' | 'dev' | 'checking' | 'latest' | 'available' | 'downloading' | 'ready' | 'error';
+  current: string;
+  latest: string | null;
+  percent: number | null;
+  error: string | null;
+}
+
 export interface RecorderStatus {
   state: RecorderState;
   /** Game currently being recorded / processed. */

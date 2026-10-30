@@ -1,5 +1,7 @@
-import type { BitratePreset } from '@shared/contracts';
+import { useState } from 'react';
+import type { BitratePreset, UpdateStatus } from '@shared/contracts';
 import { BITRATE_PRESETS, RECORDABLE_QUEUES } from '@shared/contracts';
+import { useUpdate } from '../lib/useUpdate';
 import { useStore } from '../store';
 
 export function SettingsView() {
@@ -95,6 +97,60 @@ export function SettingsView() {
           Closing the window keeps the app running in the tray
         </label>
       </fieldset>
+      <UpdateSection />
     </section>
+  );
+}
+
+function UpdateSection() {
+  const u = useUpdate();
+  const [checking, setChecking] = useState(false);
+  if (!u) return null;
+  const line: Record<UpdateStatus['state'], string> = {
+    idle: '',
+    dev: 'Development build: updates are only checked in the installed app.',
+    checking: 'Checking for updates…',
+    latest: 'You have the latest version.',
+    available: `Version ${u.latest} is available.`,
+    downloading: `Downloading version ${u.latest}… ${u.percent ?? 0}%`,
+    ready: `Version ${u.latest} is downloaded. Restart to install it.`,
+    error: `Couldn't check for updates${u.error ? `: ${u.error}` : ''}.`,
+  };
+  return (
+    <fieldset>
+      <legend>About & updates</legend>
+      <div className="row">
+        LoL VOD Review <span className="mono">{u.current}</span>
+        <span className="muted small">{line[u.state]}</span>
+      </div>
+      <div className="row compact">
+        {u.state === 'available' && (
+          <button type="button" className="primary" onClick={() => void window.lvr.downloadUpdate()}>
+            Update now
+          </button>
+        )}
+        {u.state === 'ready' && (
+          <button type="button" className="primary" onClick={() => void window.lvr.installUpdate()}>
+            Restart and update
+          </button>
+        )}
+        {u.state !== 'dev' && u.state !== 'downloading' && u.state !== 'ready' && (
+          <button
+            type="button"
+            disabled={checking}
+            onClick={() => {
+              setChecking(true);
+              void window.lvr.checkForUpdate().finally(() => setChecking(false));
+            }}
+          >
+            Check for updates
+          </button>
+        )}
+        <a className="link small" href="https://github.com/nelcolon/lol-vod-review/releases" target="_blank" rel="noreferrer">
+          Release notes
+        </a>
+        <span className="muted small">Free and open source (MIT).</span>
+      </div>
+    </fieldset>
   );
 }

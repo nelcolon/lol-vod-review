@@ -5,6 +5,7 @@ import { installMediaProtocol, registerMediaScheme } from './media-protocol';
 import { CoreBackend } from './core-backend';
 import { MockBackend } from './mock-backend';
 import { registerIpc } from './ipc';
+import { Updater } from './updater';
 import { clipsDir, dbPath, devAssetsDir, mockStatePath, ddragonDir, recorderPath, recordingsDir, sampleVideoPath, settingsPath } from './paths';
 import { SettingsStore } from './settings';
 import { maybeRunSmoke } from './smoke';
@@ -74,7 +75,14 @@ async function main(): Promise<void> {
   tray.update(backend.getRecorderStatus().state, settings.get().recordingEnabled);
   backend.onRecorderStatus((s) => tray?.update(s.state, s.enabled));
 
-  registerIpc({ backend, settings, getWindow: () => mainWindow, openClipWindow });
+  const updater = new Updater({
+    isRecording: () => backend.getRecorderStatus().state !== 'idle',
+    beforeInstall: () => {
+      quitting = true;
+    },
+  });
+  registerIpc({ backend, settings, getWindow: () => mainWindow, openClipWindow, updater });
+  updater.start();
 
   createWindow(settings);
   if (!startHidden) showWindow();

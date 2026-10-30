@@ -5,7 +5,7 @@ research. Read this, then `docs/PLAN.md` for the architecture. Do not re-plan.
 
 ## Where things are
 
-- Repo: https://github.com/nelcolon/lol-vod-review (private). Branch `main`, direct commits.
+- Repo: https://github.com/nelcolon/lol-vod-review (public, MIT since 2026-10-30). Branch `main`, direct commits.
 - Working copy: `C:\Users\ncolo\dev\lol-vod-review` (= `/mnt/c/Users/ncolo/dev/lol-vod-review` from WSL;
   `~/lol-vod-review` symlinks to it). Edit from WSL, **run everything on Windows**:
   `cmd.exe /c "cd /d C:\Users\ncolo\dev\lol-vod-review && npm <args>"` (cmd refuses a UNC cwd, so

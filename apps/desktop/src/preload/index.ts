@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { CauseTag, ClipPatch, NoteInput, RecorderStatus, Settings } from '../shared/contracts';
+import type { CauseTag, ClipPatch, NoteInput, RecorderStatus, Settings, UpdateStatus } from '../shared/contracts';
 import { IPC, mediaUrl, type LvrApi, type NavigateRoute } from '../shared/ipc';
 
 function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
@@ -27,6 +27,11 @@ const api: LvrApi = {
   setSettings: (patch: Partial<Settings>) => ipcRenderer.invoke(IPC.setSettings, patch),
   getRecorderStatus: () => ipcRenderer.invoke(IPC.getRecorderStatus),
   onRecorderStatus: (cb) => subscribe<RecorderStatus>(IPC.recorderStatus, cb),
+  getUpdateStatus: () => ipcRenderer.invoke(IPC.getUpdateStatus),
+  checkForUpdate: () => ipcRenderer.invoke(IPC.checkForUpdate),
+  downloadUpdate: () => ipcRenderer.invoke(IPC.downloadUpdate),
+  installUpdate: () => ipcRenderer.invoke(IPC.installUpdate),
+  onUpdateStatus: (cb) => subscribe<UpdateStatus>(IPC.updateStatus, cb),
   onSettingsChanged: (cb) => subscribe<Settings>(IPC.settingsChanged, cb),
   onNavigate: (cb) => subscribe<NavigateRoute>(IPC.navigate, cb),
   mediaUrl,

@@ -20,7 +20,8 @@ win:
   target:
     - target: nsis
       arch: [x64]
-  artifactName: ${productName}-Setup-${version}.${ext}
+  # no spaces: GitHub turns them into dots and latest.yml would point at a missing file
+  artifactName: LoL-VOD-Review-Setup-${version}.${ext}
 nsis:
   oneClick: false
   perMachine: false
@@ -29,5 +30,9 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: LoL VOD Review
-publish: null
+# in-app updates (electron-updater) read latest.yml from GitHub Releases; CI uploads it
+publish:
+  provider: github
+  owner: nelcolon
+  repo: lol-vod-review
 electronVersion: 45.1.0

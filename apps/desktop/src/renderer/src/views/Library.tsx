@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Game, GameResult } from '@shared/contracts';
-import { RECORDABLE_QUEUES } from '@shared/contracts';
+import { queueName, RECORDABLE_QUEUES } from '@shared/contracts';
 import { formatBytes, formatDate, formatDuration, RESULT_LABEL, REVIEW_LABEL, roleLabel } from '../lib/format';
 import bottomIcon from '../assets/roles/bottom.png';
 import jungleIcon from '../assets/roles/jungle.png';
@@ -11,6 +11,25 @@ import { DdIcon } from '../components/DdIcon';
 import { useStore } from '../store';
 
 const ROLE_ICON: Record<string, string> = { TOP: topIcon, JUNGLE: jungleIcon, MIDDLE: middleIcon, BOTTOM: bottomIcon, UTILITY: utilityIcon };
+
+const sorted = (names: Iterable<string>) => [...new Set(names)].filter(Boolean).sort((a, b) => a.localeCompare(b));
+
+/** A filter dropdown over champion names; empty string = any. */
+function ChampFilter({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  return (
+    <label>
+      {label}
+      <select value={value} onChange={(e) => onChange(e.target.value)} disabled={options.length === 0 && !value}>
+        <option value="">All</option>
+        {options.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 /** Champion portraits with a role badge, side by side; the first one larger. */
 function Lineup({ champs, v }: { champs: Game['opponents']; v: string | null }) {
@@ -42,17 +61,35 @@ export function Library() {
   const queuesPresent = useMemo(() => {
     const ids = new Set(games.map((g) => g.queueId));
     return RECORDABLE_QUEUES.filter((q) => ids.has(q.id)).concat(
-      [...ids].filter((id) => !RECORDABLE_QUEUES.some((q) => q.id === id)).map((id) => ({ id, label: `Queue ${id}`, defaultOn: false })),
+      [...ids].filter((id) => !RECORDABLE_QUEUES.some((q) => q.id === id)).map((id) => ({ id, label: queueName(id), defaultOn: false })),
     );
   }, [games]);
 
-  const filtered = games.filter((g) => (result === 'all' || g.result === result) && (queue === 'all' || g.queueId === queue));
+  const [champ, setChamp] = useState('');
+  const [withChamp, setWithChamp] = useState('');
+  const [against, setAgainst] = useState('');
+  const champs = useMemo(() => sorted(games.map((g) => g.myChampion)), [games]);
+  const withChamps = useMemo(() => sorted(games.flatMap((g) => g.allies.map((a) => a.champion))), [games]);
+  const againstChamps = useMemo(() => sorted(games.flatMap((g) => g.opponents.map((o) => o.champion))), [games]);
+
+  const filtered = games.filter(
+    (g) =>
+      (result === 'all' || g.result === result) &&
+      (queue === 'all' || g.queueId === queue) &&
+      (!champ || g.myChampion === champ) &&
+      (!withChamp || g.allies.some((a) => a.champion === withChamp)) &&
+      (!against || g.opponents.some((o) => o.champion === against)),
+  );
+  const anyFilter = result !== 'all' || queue !== 'all' || champ || withChamp || against;
 
   return (
     <section className="library">
       <div className="toolbar">
         <h1>Library</h1>
         <div className="spacer" />
+        <ChampFilter label="Champion" value={champ} options={champs} onChange={setChamp} />
+        <ChampFilter label="With" value={withChamp} options={withChamps} onChange={setWithChamp} />
+        <ChampFilter label="Against" value={against} options={againstChamps} onChange={setAgainst} />
         <label>
           Result
           <select value={result} onChange={(e) => setResult(e.target.value as 'all' | GameResult)}>
@@ -73,6 +110,21 @@ export function Library() {
             ))}
           </select>
         </label>
+        {anyFilter && (
+          <button
+            type="button"
+            className="link small"
+            onClick={() => {
+              setResult('all');
+              setQueue('all');
+              setChamp('');
+              setWithChamp('');
+              setAgainst('');
+            }}
+          >
+            Clear filters
+          </button>
+        )}
       </div>
       {loading && games.length === 0 ? (
         <p className="muted">Loading…</p>

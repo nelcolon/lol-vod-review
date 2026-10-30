@@ -10,6 +10,7 @@ import type {
   Note,
   NoteInput,
   RecorderStatus,
+  UpdateStatus,
   Settings,
 } from './contracts';
 
@@ -31,11 +32,16 @@ export const IPC = {
   getSettings: 'lvr:getSettings',
   setSettings: 'lvr:setSettings',
   getRecorderStatus: 'lvr:getRecorderStatus',
+  getUpdateStatus: 'lvr:getUpdateStatus',
+  checkForUpdate: 'lvr:checkForUpdate',
+  downloadUpdate: 'lvr:downloadUpdate',
+  installUpdate: 'lvr:installUpdate',
   // main -> renderer pushes
   recorderStatus: 'lvr:ev:recorderStatus',
   settingsChanged: 'lvr:ev:settingsChanged',
   navigate: 'lvr:ev:navigate',
   clipsChanged: 'lvr:ev:clipsChanged',
+  updateStatus: 'lvr:ev:updateStatus',
 } as const;
 
 /** The API exposed on `window.lvr` by the preload script. */
@@ -61,6 +67,12 @@ export interface LvrApi {
   setSettings(patch: Partial<Settings>): Promise<Settings>;
   getRecorderStatus(): Promise<RecorderStatus>;
   onRecorderStatus(cb: (s: RecorderStatus) => void): () => void;
+  getUpdateStatus(): Promise<UpdateStatus>;
+  checkForUpdate(): Promise<UpdateStatus>;
+  downloadUpdate(): Promise<void>;
+  /** Quits, installs the downloaded version and starts it. Ignored while recording. */
+  installUpdate(): Promise<void>;
+  onUpdateStatus(cb: (s: UpdateStatus) => void): () => void;
   onSettingsChanged(cb: (s: Settings) => void): () => void;
   onNavigate(cb: (route: NavigateRoute) => void): () => void;
   /** Build a `lvr-media://` URL for a segment/clip path. */

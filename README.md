@@ -5,15 +5,18 @@ lines up the moments worth reviewing: your deaths, kills, assists, objectives, t
 teamfights. Each moment opens a few seconds before it happens, so you watch the decision and
 not only the outcome.
 
+Free and open source ([MIT](LICENSE)).
+
 ## Download
 
 Get the latest installer from **[Releases](https://github.com/nelcolon/lol-vod-review/releases/latest)**:
-`LoL VOD Review-Setup-<version>.exe`.
+`LoL-VOD-Review-Setup-<version>.exe`.
 
 - It installs for your Windows user only, so no admin rights are needed.
 - The installer is not code-signed yet. If Windows SmartScreen warns, click **More info** →
   **Run anyway**.
-- The repository is private: you need access to it to download.
+- The app updates itself: when a new version is out it shows "This is an outdated version" with
+  an **Update now** button (also in Settings → About & updates). It never installs during a game.
 
 **Requirements:** Windows 10 (version 1903 or later) or Windows 11, 64-bit, and a GPU with a
 hardware H.264 encoder (any recent NVIDIA, AMD or Intel). Windows "N" editions need the Media
@@ -65,7 +68,8 @@ on a Windows runner:
    1. Typechecks and runs the tests.
    2. Fetches the LGPL FFmpeg build.
    3. Builds the recorder and the installer.
-   4. Publishes the release with the installer and the list of commits since the last tag.
+   4. Publishes the release with the installer, `latest.yml` and the blockmap (what installed
+      apps read to update themselves) and the list of commits since the last tag.
 
 The **Release** workflow can also be started by hand from the Actions tab. It builds the
 installer as a downloadable artifact without publishing anything.

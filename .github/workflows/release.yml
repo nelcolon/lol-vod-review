@@ -64,7 +64,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: installer
-          path: apps/desktop/release/*.exe
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.blockmap
+            apps/desktop/release/latest.yml
           if-no-files-found: error
 
       - name: Publish the release
@@ -80,12 +83,14 @@ jobs:
           $notes = @(
             '## Download'
             ''
-            'Download **LoL VOD Review-Setup-' + $tag.TrimStart('v') + '.exe** below and run it. It installs for your user only (no admin needed).'
+            'Download **LoL-VOD-Review-Setup-' + $tag.TrimStart('v') + '.exe** below and run it. It installs for your user only (no admin needed).'
+            'Already installed? The app offers the update itself (banner at the top, or Settings → About & updates).'
             'The installer is not code-signed yet, so Windows SmartScreen may warn: click **More info** → **Run anyway**.'
             ''
             '## Changes'
             ''
           ) + $changes
           $notes -join "`n" | Out-File -Encoding utf8 notes.md
-          $exe = Get-ChildItem apps/desktop/release/*.exe | Select-Object -First 1
-          gh release create $tag $exe.FullName --title "LoL VOD Review $($tag.TrimStart('v'))" --notes-file notes.md
+          $files = @(Get-ChildItem apps/desktop/release/*.exe, apps/desktop/release/*.exe.blockmap, apps/desktop/release/latest.yml | ForEach-Object FullName)
+          if ($files.Count -lt 3) { throw "expected installer, blockmap and latest.yml, got: $files" }
+          gh release create $tag @files --title "LoL VOD Review $($tag.TrimStart('v'))" --notes-file notes.md

@@ -6,12 +6,14 @@ import type { Backend } from './backend';
 import { cutClip } from './clips';
 import { clipsDir, ffmpegPath } from './paths';
 import type { SettingsStore } from './settings';
+import type { Updater } from './updater';
 
 export interface IpcDeps {
   backend: Backend;
   settings: SettingsStore;
   getWindow: () => BrowserWindow | null;
   openClipWindow: (clipId: string) => void;
+  updater: Updater;
 }
 
 function broadcastClipsChanged(gameId: string): void {
@@ -39,7 +41,11 @@ function assertNumber(v: unknown, name: string): number {
   return v;
 }
 
-export function registerIpc({ backend, settings, getWindow, openClipWindow }: IpcDeps): void {
+export function registerIpc({ backend, settings, getWindow, openClipWindow, updater }: IpcDeps): void {
+  ipcMain.handle(IPC.getUpdateStatus, () => updater.get());
+  ipcMain.handle(IPC.checkForUpdate, () => updater.check());
+  ipcMain.handle(IPC.downloadUpdate, () => updater.download());
+  ipcMain.handle(IPC.installUpdate, () => updater.install());
   ipcMain.handle(IPC.listGames, () => backend.listGames());
   ipcMain.handle(IPC.getGame, (_e, id: unknown) => backend.getGame(assertString(id, 'id')));
 
