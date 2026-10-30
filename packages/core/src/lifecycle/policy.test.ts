@@ -51,4 +51,10 @@ describe('remake rule', () => {
     expect(postGameDecision({ durationS: 100, result: 'Neither', pinned: true }).keep).toBe(true);
     expect(postGameDecision({ durationS: 1000, result: 'Win', pinned: false }).keep).toBe(true);
   });
+
+  it('records ARAM: Mayhem and other Howling Abyss variants as ARAM', () => {
+    expect(classifyQueue({ queueId: 2400, gameMode: 'KIWI', mapId: 12 })).toBe('aram');
+    expect(classifyQueue({ queueId: 2401, gameMode: 'NEWMODE', mapId: 12 })).toBe('aram');
+    expect(shouldRecord(2400, 'KIWI', null).record).toBe(true);
+  });
 });

@@ -38,7 +38,7 @@ import { kdaOf, mapClip, mapEvent, mapGame, mapMoment, mapNote, mapSegment, type
 import { computePlayState, involvedIn, killsIn, readPlayersLog, type LcuTimeline, type SavedPlayer } from './core/playstate';
 import { RecorderSidecar, type StoppedEvent } from './core/recorder';
 import type { CauseTag, Clip, ClipBundle, Game, GameBundle, Note, NoteInput, PlayState, RecorderStatus, Settings } from '../shared/contracts';
-import { BITRATE_PRESETS, CAUSE_TAGS, OPPONENT_ROLES } from '../shared/contracts';
+import { BITRATE_PRESETS, CAUSE_TAGS, OPPONENT_ROLES, OTHER_MODES } from '../shared/contracts';
 
 export interface CoreBackendOptions {
   dbPath: string;
@@ -80,7 +80,7 @@ function recordingSettings(s: Settings): RecordingSettings {
     practiceTool: s.queues.includes(3140),
     custom: s.queues.includes(0),
     spectate: false,
-    otherModes: false,
+    otherModes: s.queues.includes(OTHER_MODES),
     unknown: true,
   };
 }

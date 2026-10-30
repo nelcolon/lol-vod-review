@@ -54,7 +54,7 @@ export const SR_QUEUE_IDS: ReadonlySet<number> = new Set([
   490, // quickplay
   700, // clash
 ]);
-export const ARAM_QUEUE_IDS: ReadonlySet<number> = new Set([450, 720 /* ARAM clash */]);
+export const ARAM_QUEUE_IDS: ReadonlySet<number> = new Set([450, 720 /* ARAM clash */, 2400 /* ARAM: Mayhem */]);
 export const ARENA_QUEUE_IDS: ReadonlySet<number> = new Set([1700, 1710]);
 /** Brawl queue id is not confirmed; gate Brawl on gameMode/map as well. */
 export const BRAWL_QUEUE_IDS: ReadonlySet<number> = new Set([1300]);
@@ -88,7 +88,8 @@ export function classifyQueue(info: GameInfo): QueueCategory {
   if (info.queueId !== null) {
     if (info.queueId === 0) return 'custom';
     if (SR_QUEUE_IDS.has(info.queueId)) return 'summoners_rift';
-    if (ARAM_QUEUE_IDS.has(info.queueId)) return 'aram';
+    // Howling Abyss variants (ARAM: Mayhem's gameMode is KIWI) are ARAM too.
+    if (ARAM_QUEUE_IDS.has(info.queueId) || info.mapId === MAP_HOWLING_ABYSS) return 'aram';
     return 'other';
   }
   // No LCU: fall back to gameMode + map.

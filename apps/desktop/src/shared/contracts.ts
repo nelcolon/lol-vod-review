@@ -344,17 +344,36 @@ export const BITRATE_PRESETS: Record<BitratePreset, { label: string; width: numb
 };
 
 /** Riot queueIds we offer to record. Off by default: Practice Tool, custom, Arena/Brawl, spectate. */
+/** Settings `queues` entry standing for every mode without its own checkbox. */
+export const OTHER_MODES = -1;
+/** Bumped when a new default-on entry is added, so existing settings get it once. */
+export const QUEUE_LIST_VERSION = 2;
+
 export const RECORDABLE_QUEUES: ReadonlyArray<{ id: number; label: string; defaultOn: boolean }> = [
   { id: 420, label: 'Ranked Solo/Duo', defaultOn: true },
   { id: 440, label: 'Ranked Flex', defaultOn: true },
   { id: 400, label: 'Normal Draft', defaultOn: true },
   { id: 430, label: 'Normal Blind', defaultOn: true },
   { id: 490, label: 'Quickplay', defaultOn: true },
-  { id: 450, label: 'ARAM', defaultOn: true },
+  { id: 450, label: 'ARAM (incl. ARAM: Mayhem)', defaultOn: true },
   { id: 1700, label: 'Arena', defaultOn: false },
   { id: 0, label: 'Custom games', defaultOn: false },
   { id: 3140, label: 'Practice Tool', defaultOn: false },
+  /** Not a queue: any mode not listed above (URF, One for All, modes Riot adds later). */
+  { id: OTHER_MODES, label: 'Other and new modes (URF, One for All…)', defaultOn: true },
 ];
+
+/** Names for queues that have no checkbox of their own. */
+const QUEUE_NAMES: Record<number, string> = {
+  450: 'ARAM',
+  480: 'Swiftplay',
+  700: 'Clash',
+  720: 'ARAM Clash',
+  900: 'URF',
+  1020: 'One for All',
+  1900: 'URF',
+  2400: 'ARAM: Mayhem',
+};
 
 export interface Settings {
   recordingEnabled: boolean;
@@ -370,6 +389,8 @@ export interface Settings {
   micVolume: number;
   autostart: boolean;
   minimizeToTray: boolean;
+  /** QUEUE_LIST_VERSION these settings were last migrated to. */
+  queueListVersion: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -382,6 +403,7 @@ export const DEFAULT_SETTINGS: Settings = {
   micVolume: 100,
   autostart: false,
   minimizeToTray: true,
+  queueListVersion: QUEUE_LIST_VERSION,
 };
 
 export type RecorderState = 'idle' | 'recording' | 'post_processing';
@@ -416,5 +438,5 @@ export interface ClipExportResult {
 }
 
 export function queueName(queueId: number): string {
-  return RECORDABLE_QUEUES.find((q) => q.id === queueId)?.label ?? `Queue ${queueId}`;
+  return QUEUE_NAMES[queueId] ?? RECORDABLE_QUEUES.find((q) => q.id === queueId && q.id !== OTHER_MODES)?.label ?? `Queue ${queueId}`;
 }

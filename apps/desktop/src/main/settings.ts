@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { DEFAULT_SETTINGS, BITRATE_PRESETS, type Settings } from '../shared/contracts';
+import { DEFAULT_SETTINGS, BITRATE_PRESETS, OTHER_MODES, QUEUE_LIST_VERSION, type Settings } from '../shared/contracts';
 
 type Listener = (s: Settings) => void;
 
@@ -53,6 +53,8 @@ export function sanitize(s: Settings): Settings {
   const quota = Number.isFinite(s.quotaGb) ? Math.min(2000, Math.max(5, Math.round(s.quotaGb))) : DEFAULT_SETTINGS.quotaGb;
   const preRoll = Number.isFinite(s.preRollS) ? Math.min(90, Math.max(5, Math.round(s.preRollS))) : DEFAULT_SETTINGS.preRollS;
   const queues = Array.isArray(s.queues) ? [...new Set(s.queues.filter((q) => Number.isInteger(q)))] : DEFAULT_SETTINGS.queues;
+  // v1 settings predate "Other and new modes": turn it on once, like for a new install.
+  if ((s.queueListVersion ?? 1) < 2 && !queues.includes(OTHER_MODES)) queues.push(OTHER_MODES);
   return {
     recordingEnabled: Boolean(s.recordingEnabled),
     quotaGb: quota,
@@ -63,5 +65,6 @@ export function sanitize(s: Settings): Settings {
     recordMic: s.recordMic === undefined ? DEFAULT_SETTINGS.recordMic : Boolean(s.recordMic),
     autostart: Boolean(s.autostart),
     minimizeToTray: Boolean(s.minimizeToTray),
+    queueListVersion: QUEUE_LIST_VERSION,
   };
 }

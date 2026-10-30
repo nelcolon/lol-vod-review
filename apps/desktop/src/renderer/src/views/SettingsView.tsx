@@ -81,7 +81,7 @@ export function SettingsView() {
             </label>
           ))}
         </div>
-        <p className="muted small">Practice Tool, spectate and replays are never recorded. Brawl data is never stored (Riot policy).</p>
+        <p className="muted small">Spectating and replays are never recorded. Brawl data is never stored (Riot policy).</p>
       </fieldset>
 
       <fieldset>
