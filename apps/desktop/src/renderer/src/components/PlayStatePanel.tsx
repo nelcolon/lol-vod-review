@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { Moment, PlayItem, PlayPlayer, PlayState } from '@shared/contracts';
+import type { Moment, PlayItem, PlayKill, PlayPlayer, PlayState } from '@shared/contracts';
 import { formatGameTime } from '@shared/timeline-math';
+import deadIcon from '../assets/ui/dead.png';
+import goldIcon from '../assets/ui/gold.png';
+import scoreIcon from '../assets/ui/score.png';
 import { CollapseToggle, useCollapsed } from '../lib/collapse';
 
 const CDN = 'https://ddragon.leagueoflegends.com/cdn';
@@ -37,13 +40,36 @@ function Items({ items, v }: { items: PlayItem[]; v: string | null }) {
   );
 }
 
+/** In-game UI glyphs (Data Dragon's scoreboard icons, bundled). */
+const Gold = () => <img className="ui-icon" src={goldIcon} alt="gold" />;
+
+/** Champion icon for a kill; turrets/minions/monsters as a word. */
+function KillTarget({ k, v }: { k: PlayKill; v: string | null }) {
+  const label = `${k.champion} · ${formatGameTime(k.t)}`;
+  if (!k.championKey) {
+    return (
+      <span className="ps-kill-text" title={label}>
+        {k.champion}
+      </span>
+    );
+  }
+  return <Icon v={v} kind="champion" id={k.championKey} label={label} size={22} />;
+}
+
 function PlayerRow({ p, v, hasItems, showGold }: { p: PlayPlayer; v: string | null; hasItems: boolean; showGold: boolean }) {
   const involved = p.isMe || p.roles.length > 0;
   const fate = p.killed.length > 0 && p.killedBy.length > 0 ? 'traded' : p.killedBy.length > 0 ? 'died' : p.killed.length > 0 ? 'killer' : '';
   return (
     <div className={`ps-player ${involved ? 'involved' : ''} ${p.isMe ? 'me' : ''} ${fate}`}>
       <div className="ps-line">
-        <Icon v={v} kind="champion" id={p.championKey} label={p.champion} size={28} />
+        <span className="ps-portrait">
+          <Icon v={v} kind="champion" id={p.championKey} label={p.champion} size={30} />
+          {hasItems && (
+            <span className="ps-level" title={p.level > p.levelBefore ? `Level ${p.levelBefore} → ${p.level} during the play` : `Level ${p.level}`}>
+              {p.level}
+            </span>
+          )}
+        </span>
         <span className="ps-spells">
           {p.spells.map((s, i) => (
             <Icon key={i} v={v} kind="spell" id={spellIcon(s.key)} label={s.name} size={13} />
@@ -59,47 +85,61 @@ function PlayerRow({ p, v, hasItems, showGold }: { p: PlayPlayer; v: string | nu
           </span>
         ))}
         <span className="spacer" />
-        {hasItems && (
-          <span className="mono small" title="Level (change during the play)">
-            Lv {p.level}
-            {p.level > p.levelBefore && <span className="ps-up"> +{p.level - p.levelBefore}</span>}
+        {p.level > p.levelBefore && (
+          <span className="ps-up small mono" title={`Level ${p.levelBefore} → ${p.level} during the play`}>
+            ▲{p.level - p.levelBefore} lv
           </span>
         )}
         {hasItems && (
-          <span className="mono small" title="Kills / deaths / assists">
+          <span className="ps-stat mono small" title="Kills / deaths / assists">
+            <img className="ui-icon" src={scoreIcon} alt="score" />
             {p.kills}/{p.deaths}/{p.assists}
           </span>
         )}
       </div>
       {(p.killed.length > 0 || p.killedBy.length > 0) && (
-        <div className="ps-kills small">
-          {p.killed.map((k, i) => (
-            <span key={`k${i}`} className="ps-kill">
-              killed <strong>{k.champion}</strong> <span className="mono muted">{formatGameTime(k.t)}</span>
+        <div className="ps-kills">
+          {p.killed.length > 0 && (
+            <span className="ps-kill-group" title="Killed in this play">
+              <img className="ui-icon" src={scoreIcon} alt="killed" />
+              {p.killed.map((k, i) => (
+                <KillTarget key={i} k={k} v={v} />
+              ))}
             </span>
-          ))}
-          {p.killedBy.map((k, i) => (
-            <span key={`d${i}`} className="ps-death">
-              killed by <strong>{k.champion}</strong> <span className="mono muted">{formatGameTime(k.t)}</span>
+          )}
+          {p.killedBy.length > 0 && (
+            <span className="ps-kill-group ps-death-group" title="Killed by">
+              <img className="ui-icon" src={deadIcon} alt="killed by" />
+              {p.killedBy.map((k, i) => (
+                <KillTarget key={i} k={k} v={v} />
+              ))}
             </span>
-          ))}
+          )}
         </div>
       )}
       {hasItems && (
         <div className="ps-line">
           <Items items={p.items} v={v} />
           <span className="spacer" />
-          <span className="mono small" title="Cost of items held (wards and potions excluded)">
-            {kGold(p.itemGold)} in items
+          <span className="ps-stat mono small" title={`Items held: ${p.itemGold} gold (wards and potions excluded)${showGold && p.totalGold !== null ? ` · ${p.totalGold} earned so far` : ''}`}>
+            <Gold />
+            {kGold(p.itemGold)}
           </span>
-          {showGold && p.totalGold !== null && (
-            <span className="mono small muted" title="Total gold earned at the minute mark">
-              · {kGold(p.totalGold)} earned
+          {p.vs && (
+            <span className={`ps-vs mono small ${p.vs.diff >= 0 ? 'up' : 'down'}`} title={`${p.vs.diff >= 0 ? 'Ahead of' : 'Behind'} ${p.vs.champion} (same position) by ${Math.abs(p.vs.diff)} gold in items`}>
+              {p.vs.diff >= 0 ? '▲' : '▼'}
+              {kGold(Math.abs(p.vs.diff))} vs
+              <Icon v={v} kind="champion" id={p.vs.championKey} label={p.vs.champion} size={18} />
             </span>
           )}
         </div>
       )}
-      {!hasItems && showGold && p.totalGold !== null && <div className="mono small muted">{kGold(p.totalGold)} gold earned</div>}
+      {!hasItems && showGold && p.totalGold !== null && (
+        <div className="ps-stat mono small muted" title="Total gold earned at the minute mark">
+          <Gold />
+          {kGold(p.totalGold)} earned
+        </div>
+      )}
       {(p.used.length > 0 || p.bought.length > 0 || p.sold.length > 0) && (
         <div className="ps-changes small">
           {p.used.map((c) => (
@@ -175,17 +215,17 @@ export function PlayStatePanel({ gameId, moment }: { gameId: string; moment: Mom
       <div className="ps-summary small">
         {state.myGold !== null && (
           <span title="Gold you were holding, not spent">
-            Your unspent gold: <strong className="mono">{state.myGold}</strong>
+            Your unspent gold: <Gold /> <strong className="mono">{state.myGold}</strong>
           </span>
         )}
         {state.hasItems && (
           <span title="Cost of items held, your team vs theirs">
-            Items: <strong className="mono">{kGold(teamItems(true))}</strong> vs <strong className="mono">{kGold(teamItems(false))}</strong> ({diff(teamItems(true), teamItems(false))})
+            <Gold /> Items: <strong className="mono">{kGold(teamItems(true))}</strong> vs <strong className="mono">{kGold(teamItems(false))}</strong> ({diff(teamItems(true), teamItems(false))})
           </span>
         )}
         {showGold && (
           <span title="Total gold earned, from the League client's minute-by-minute timeline">
-            Gold at {state.goldMinute}:00: <strong className="mono">{kGold(teamGold(true))}</strong> vs <strong className="mono">{kGold(teamGold(false))}</strong> ({diff(teamGold(true), teamGold(false))})
+            <Gold /> Earned by {state.goldMinute}:00: <strong className="mono">{kGold(teamGold(true))}</strong> vs <strong className="mono">{kGold(teamGold(false))}</strong> ({diff(teamGold(true), teamGold(false))})
           </span>
         )}
       </div>

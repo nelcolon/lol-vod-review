@@ -247,7 +247,17 @@ export interface PlayItemChange {
 
 export interface PlayKill {
   champion: string;
+  /** Data Dragon champion id for the icon; '' for turrets, minions, monsters. */
+  championKey: string;
   t: number;
+}
+
+/** Item gold compared with the enemy in the same position. */
+export interface PlayVs {
+  champion: string;
+  championKey: string;
+  /** This player's item gold minus theirs. */
+  diff: number;
 }
 
 export type PlayRole = 'killer' | 'victim' | 'assist';
@@ -280,6 +290,8 @@ export interface PlayPlayer {
   killed: PlayKill[];
   /** Who killed this player in the play (champion, or Turret/Minion/…). */
   killedBy: PlayKill[];
+  /** Lane opponent comparison, null when positions are unknown. */
+  vs: PlayVs | null;
   /** Total gold earned at the last full minute (League client timeline), null when unavailable. */
   totalGold: number | null;
 }

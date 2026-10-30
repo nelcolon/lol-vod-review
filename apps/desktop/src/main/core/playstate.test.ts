@@ -22,6 +22,7 @@ const p = (name: string, champ: string, team: 'ORDER' | 'CHAOS', level: number, 
   kills: 0,
   deaths: 0,
   assists: 0,
+  position: 'BOTTOM',
   items: items.map(([id, count], slot) => ({ id, count, slot })),
   spells: [{ name: 'Flash', key: 'SummonerFlash' }],
 });
@@ -62,9 +63,10 @@ describe('playstate', () => {
     const [me, cait] = s.players;
     expect(me).toMatchObject({ isMe: true, roles: ['victim'], used: [{ id: 2003, name: 'Health Potion', count: 2 }], bought: [], sold: [], itemGold: 0 });
     expect(cait).toMatchObject({ roles: ['killer'], level: 11, levelBefore: 10, itemGold: 3450 });
-    expect(me!.killedBy).toEqual([{ champion: 'Caitlyn', t: 600 }]);
-    expect(cait!.killed).toEqual([{ champion: 'Sivir', t: 600 }]);
-    expect(cait!.killedBy).toEqual([{ champion: 'Turret', t: 603 }]);
+    expect(me!.killedBy).toEqual([{ champion: 'Caitlyn', championKey: 'Caitlyn', t: 600 }]);
+    expect(cait!.killed).toEqual([{ champion: 'Sivir', championKey: 'Sivir', t: 600 }]);
+    expect(cait!.killedBy).toEqual([{ champion: 'Turret', championKey: '', t: 603 }]);
+    expect(me!.vs).toEqual({ champion: 'Caitlyn', championKey: 'Caitlyn', diff: -3450 });
   });
 
   it('reports a purchase instead of its components, and Stopwatch as used', () => {

@@ -582,6 +582,7 @@ export class MockBackend implements Backend {
       champion: name === MOCK_ME ? me : (name.split(' ')[0] ?? name),
       championKey: name === MOCK_ME ? me.replace(/[^A-Za-z]/g, '') : (name.split(' ')[0] ?? name),
       team: enemies.has(name) ? 'CHAOS' : 'ORDER',
+      position: ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'][i % 5]!,
       level: 9 + (i % 4),
       isDead: false,
       kills: i % 5,

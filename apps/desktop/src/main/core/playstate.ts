@@ -15,6 +15,8 @@ export interface SavedPlayer {
   champion: string;
   championKey: string;
   team: 'ORDER' | 'CHAOS';
+  /** TOP / JUNGLE / MIDDLE / BOTTOM / UTILITY; '' or absent in old logs. */
+  position?: string;
   level: number;
   isDead: boolean;
   kills: number;
@@ -148,7 +150,7 @@ export interface PlayStateInput {
   me: { name: string; team: string } | null;
   log: PlayersLog;
   /** Used when the log is empty (games recorded before items were saved). */
-  participants: Array<{ name: string; champion: string; team: 'ORDER' | 'CHAOS' }>;
+  participants: Array<{ name: string; champion: string; team: 'ORDER' | 'CHAOS'; role?: string | null }>;
   lcu: LcuTimeline | null;
   dd: DdragonData | null;
 }
@@ -168,20 +170,27 @@ export function computePlayState(input: PlayStateInput): PlayState {
     input.participants.map((p) => ({ name: p.name, champion: p.champion, championKey: '', team: p.team, level: 0, isDead: false, kills: 0, deaths: 0, assists: 0, items: [], spells: [] }));
 
   const champOf = (name: string) => base.find((x) => x.name === name)?.champion ?? input.participants.find((x) => x.name === name)?.champion ?? nonChampion(name);
+  const keyOf = (name: string) => base.find((x) => x.name === name)?.championKey ?? '';
+  const kill = (name: string, t: number): PlayKill => ({ champion: champOf(name), championKey: keyOf(name), t });
   const kills = input.kills ?? [];
+  const positionOf = (p: SavedPlayer) => p.position || input.participants.find((x) => x.name === p.name)?.role || '';
+  const itemGoldOf = (p: SavedPlayer) =>
+    p.items.reduce((sum, i) => {
+      const d = dd?.items[i.id];
+      return d && !d.consumable && !d.trinket ? sum + d.gold * Math.max(1, i.count) : sum;
+    }, 0);
 
   const players: PlayPlayer[] = base.map((p) => {
-    const killed: PlayKill[] = kills.filter((k) => k.killer === p.name).map((k) => ({ champion: champOf(k.victim), t: k.t }));
-    const killedBy: PlayKill[] = kills.filter((k) => k.victim === p.name).map((k) => ({ champion: champOf(k.killer), t: k.t }));
+    const killed: PlayKill[] = kills.filter((k) => k.killer === p.name).map((k) => kill(k.victim, k.t));
+    const killedBy: PlayKill[] = kills.filter((k) => k.victim === p.name).map((k) => kill(k.killer, k.t));
+    const pos = positionOf(p);
+    const opp = pos ? base.find((x) => x.team !== p.team && positionOf(x) === pos) : undefined;
     const b = before?.players.find((x) => x.name === p.name);
     const a = after?.players.find((x) => x.name === p.name);
     const diff = b && a ? diffItems(b.items, a.items, (id) => dd?.items[id]?.consumable ?? false) : { used: [], bought: [], sold: [] };
     const toChanges = (list: Array<[number, number]>) => list.map(([id, n]) => change(id, n));
     const items = [...p.items].sort((x, y) => x.slot - y.slot).map((i) => item(i.id, i.count));
-    const itemGold = p.items.reduce((sum, i) => {
-      const d = dd?.items[i.id];
-      return d && !d.consumable && !d.trinket ? sum + d.gold * Math.max(1, i.count) : sum;
-    }, 0);
+    const itemGold = itemGoldOf(p);
     return {
       name: p.name,
       champion: p.champion,
@@ -199,6 +208,7 @@ export function computePlayState(input: PlayStateInput): PlayState {
       spells: p.spells,
       killed,
       killedBy,
+      vs: opp ? { champion: opp.champion, championKey: opp.championKey, diff: itemGold - itemGoldOf(opp) } : null,
       used: toChanges(diff.used),
       bought: toChanges(diff.bought),
       sold: toChanges(diff.sold),

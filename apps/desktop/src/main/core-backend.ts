@@ -384,6 +384,7 @@ export class CoreBackend implements Backend {
       champion: p.championName,
       championKey: p.championKey,
       team: p.team,
+      position: p.position,
       level: p.level,
       isDead: p.isDead,
       kills: p.scores?.kills ?? 0,
@@ -657,7 +658,7 @@ export class CoreBackend implements Backend {
       kills: killsIn(events.map((e) => ({ name: e.name, payload: e.payload, gameTimeS: e.game_time_s }))),
       me: meRow,
       log: segment ? readPlayersLog(join(dirname(segment.path), 'players.jsonl')) : { snaps: [], gold: [] },
-      participants: this.store.listParticipants(gid).map((p) => ({ name: p.riot_id_name, champion: p.champion ?? '', team: p.team === 'CHAOS' ? 'CHAOS' : 'ORDER' })),
+      participants: this.store.listParticipants(gid).map((p) => ({ name: p.riot_id_name, champion: p.champion ?? '', team: p.team === 'CHAOS' ? 'CHAOS' : 'ORDER', role: p.role })),
       lcu,
       dd,
     });
