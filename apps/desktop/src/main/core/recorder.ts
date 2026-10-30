@@ -47,6 +47,8 @@ export interface StartOptions {
   out: string;
   fps: number;
   bitrateMbps: number;
+  /** Mix the default microphone into the game audio. */
+  mic?: boolean;
 }
 
 export interface RecorderHandlers {
@@ -165,7 +167,7 @@ export class RecorderSidecar {
   async start(o: StartOptions): Promise<StartedEvent> {
     // `started` comes with the first frame; a static loading screen can take a moment.
     const ev = await this.send(
-      { cmd: 'start', target: o.target, out: o.out, fps: o.fps, bitrateMbps: o.bitrateMbps, audio: { game: true, mic: false } },
+      { cmd: 'start', target: o.target, out: o.out, fps: o.fps, bitrateMbps: o.bitrateMbps, audio: { game: true, mic: o.mic ?? false } },
       'start',
       15_000,
     );

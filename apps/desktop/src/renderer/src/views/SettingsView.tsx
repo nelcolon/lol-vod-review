@@ -48,6 +48,11 @@ export function SettingsView() {
             <span className="mono">{settings.preRollS} s</span>
           </span>
         </label>
+        <label className="row compact">
+          <input type="checkbox" checked={settings.recordMic} onChange={(e) => void update({ recordMic: e.target.checked })} />
+          Record my microphone
+          <span className="muted small">Your voice is mixed with the game audio (uses Windows' default recording device). Applies from the next game.</span>
+        </label>
       </fieldset>
 
       <fieldset>

@@ -59,6 +59,7 @@ export function sanitize(s: Settings): Settings {
     bitratePreset: preset,
     queues,
     preRollS: preRoll,
+    recordMic: s.recordMic === undefined ? DEFAULT_SETTINGS.recordMic : Boolean(s.recordMic),
     autostart: Boolean(s.autostart),
     minimizeToTray: Boolean(s.minimizeToTray),
   };

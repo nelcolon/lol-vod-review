@@ -364,6 +364,8 @@ export interface Settings {
   queues: number[];
   /** Seconds of video before a moment's trigger when jumping to it (5-90). */
   preRollS: number;
+  /** Mix the default microphone into the recording's audio. */
+  recordMic: boolean;
   autostart: boolean;
   minimizeToTray: boolean;
 }
@@ -374,6 +376,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bitratePreset: '1080p60_12',
   queues: RECORDABLE_QUEUES.filter((q) => q.defaultOn).map((q) => q.id),
   preRollS: 10,
+  recordMic: true,
   autostart: false,
   minimizeToTray: true,
 };

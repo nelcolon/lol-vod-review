@@ -55,6 +55,7 @@ self-test options:
   --bitrate MBPS     video bitrate (default 12)
   --hevc             HEVC instead of H.264
   --no-audio         disable system loopback audio
+  --mic              mix the default microphone into the audio
   --cursor           include the cursor
   --border           keep the yellow WGC border
 "
@@ -268,7 +269,7 @@ fn self_test(args: &[String], emitter: Emitter) -> i32 {
         height: None,
         audio: AudioParams {
             game: !args.iter().any(|a| a == "--no-audio"),
-            mic: false,
+            mic: args.iter().any(|a| a == "--mic"),
         },
         cursor: args.iter().any(|a| a == "--cursor"),
         border: args.iter().any(|a| a == "--border"),

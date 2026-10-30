@@ -294,6 +294,7 @@ export class CoreBackend implements Backend {
         out,
         fps: preset.fps,
         bitrateMbps: preset.mbps,
+        mic: this.settings?.recordMic ?? true,
       });
       if (this.live !== g || this.runner.state !== 'RECORDING') {
         // The game ended while the recorder was starting: drop this segment.

@@ -52,7 +52,7 @@ One JSON object per line. Commands on stdin (`cmd`), events on stdout (`ev`). Fi
 | `ready` | Once at process start: `version`, `pid` |
 | `started` | First frame captured and encoder open. `qpcStart` = QPC of the first encoded frame (from WGC `SystemRelativeTime`); this is video t=0 for the clock mapper |
 | `stats` | Every ~2 s while recording |
-| `warning` | Edge-triggered (start and clear): `black_frames[_cleared]`, `frozen_frames[_cleared]`, `window_minimized`/`window_restored`, `size_changed`, `no_frames_yet`, `audio_unavailable`, `mic_unsupported`, `scale_unavailable`, `*_setting_unsupported` |
+| `warning` | Edge-triggered (start and clear): `black_frames[_cleared]`, `frozen_frames[_cleared]`, `window_minimized`/`window_restored`, `size_changed`, `no_frames_yet`, `audio_unavailable`, `mic_unavailable`, `mic_unsupported`, `scale_unavailable`, `*_setting_unsupported` |
 | `stopped` | After `stop`, stdin EOF, Ctrl+C, or the window closing (`reason`: `stop`, `stdin_eof`, `interrupt`, `capture_ended`) |
 | `error` | `bad_command`, `already_recording`, `not_recording`, `target_not_found`, `no_frames`, `finalize_failed` |
 
@@ -80,7 +80,13 @@ Closing stdin ends the session cleanly, so if the Electron process dies the reco
 - Not faststart: `moov` is at the end. Local playback is fine; the post-game step may remux with
   `ffmpeg -i in.mp4 -c copy -movflags +faststart out.mp4`.
 - Audio is **system loopback** (default render endpoint): everything you hear is recorded, Discord and
-  music included. This is intended (decision 2026-10-29); mic is not implemented (`mic_unsupported`).
+  music included. This is intended (decision 2026-10-29).
+- `audio.mic: true` mixes the default recording device into the same AAC track (`audioMode`
+  `system_loopback+mic`). The loopback thread is the clock; each buffer it sends gets as many mic
+  frames mixed in (saturating add, mic buffer capped at 500 ms), and with the mic on it fills
+  silence when the system makes no sound so the voice keeps flowing. A mic that cannot be opened
+  emits `mic_unavailable` and recording continues without it; `mic` without `game` emits
+  `mic_unsupported`. `--self-test --mic` tries it.
 - No scaling: the output size is locked to the first frame (or `width`/`height`); later size changes are
   cropped or padded on the GPU path (`size_changed` warning).
 - Black and frozen-frame detection is unit-tested on synthetic grids only, not against a real black capture.

@@ -240,6 +240,7 @@ pub struct Session {
     slot: Arc<Mutex<Option<VideoEncoder>>>,
     shared: Arc<Shared>,
     audio: Option<AudioHandle>,
+    mic: Option<AudioHandle>,
     audio_shared_stop: Arc<AtomicBool>,
     params: StartParams,
     hwnd: Option<u64>,
@@ -327,25 +328,40 @@ impl Session {
         // Audio first: the encoder's audio settings must match what we capture.
         let audio_stop = Arc::new(AtomicBool::new(false));
         let mut audio: Option<AudioHandle> = None;
+        let mut mic: Option<AudioHandle> = None;
         if params.audio.game {
+            // The mic is mixed into the loopback track, so it is opened at the loopback's rate.
+            let mic_buf = params.audio.mic.then(|| Arc::new(audio::MicBuffer::new(48_000)));
             match audio::spawn_system_loopback(AudioShared {
                 sink: slot.clone(),
                 first_frame_hns: shared.first_frame_hns.clone(),
                 samples_sent: shared.audio_samples.clone(),
                 stop: audio_stop.clone(),
+                mic: mic_buf.clone(),
             }) {
-                Ok(h) => audio = Some(h),
+                Ok(h) => {
+                    if let Some(buf) = mic_buf {
+                        match audio::spawn_mic(buf, shared.first_frame_hns.clone(), audio_stop.clone(), h.format.sample_rate) {
+                            Ok(m) => mic = Some(m),
+                            Err(e) => emitter.emit(&Event::Warning {
+                                code: WarningCode::MicUnavailable,
+                                detail: Some(e),
+                                t: now_t,
+                            }),
+                        }
+                    }
+                    audio = Some(h);
+                }
                 Err(e) => emitter.emit(&Event::Warning {
                     code: WarningCode::AudioUnavailable,
                     detail: Some(e),
                     t: now_t,
                 }),
             }
-        }
-        if params.audio.mic {
+        } else if params.audio.mic {
             emitter.emit(&Event::Warning {
                 code: WarningCode::MicUnsupported,
-                detail: Some("mic capture is not implemented in this build; game audio only".into()),
+                detail: Some("the mic is mixed into the game audio track; enable game audio".into()),
                 t: now_t,
             });
         }
@@ -443,6 +459,9 @@ impl Session {
             Ok(c) => c,
             Err(e) => {
                 audio_stop.store(true, Ordering::SeqCst);
+                if let Some(m) = mic.take() {
+                    m.stop();
+                }
                 if let Some(a) = audio.take() {
                     a.stop();
                 }
@@ -455,6 +474,7 @@ impl Session {
             slot,
             shared,
             audio,
+            mic,
             audio_shared_stop: audio_stop,
             params,
             hwnd,
@@ -525,7 +545,7 @@ impl Session {
                 height: self.shared.height.load(Ordering::Relaxed),
                 fps: self.params.fps,
                 audio: self.audio.is_some(),
-                audio_mode: self.audio.as_ref().map(|a| a.mode.to_string()),
+                audio_mode: self.audio.as_ref().map(|a| if self.mic.is_some() { format!("{}+mic", a.mode) } else { a.mode.to_string() }),
                 path: self.params.out.clone(),
                 hwnd: self.hwnd,
             });
@@ -581,6 +601,9 @@ impl Session {
     pub fn stop(mut self, reason: &str) -> Event {
         // 1. Audio first so no buffer reaches the encoder after video stops.
         self.audio_shared_stop.store(true, Ordering::SeqCst);
+        if let Some(m) = self.mic.take() {
+            m.stop();
+        }
         if let Some(a) = self.audio.take() {
             a.stop();
         }

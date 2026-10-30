@@ -127,6 +127,7 @@ pub enum WarningCode {
     NoFramesYet,
     AudioUnavailable,
     MicUnsupported,
+    MicUnavailable,
     ScaleUnavailable,
     BorderSettingUnsupported,
     CursorSettingUnsupported,
