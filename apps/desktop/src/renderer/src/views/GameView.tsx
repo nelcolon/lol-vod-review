@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PlayFlash } from '../components/PlayFlash';
 import type { Moment } from '@shared/contracts';
 import { formatTime, nextMomentIndex, prevMomentIndex } from '@shared/timeline-math';
 import { FullscreenBar } from '../components/FullscreenBar';
@@ -203,6 +204,7 @@ export function GameView() {
               // The two clicks of a double-click toggle play twice, so only fullscreen changes.
               onDoubleClick={toggleFullscreen}
             />
+            <PlayFlash videoRef={videoRef} />
             {isFs && (
               <FullscreenBar
                 events={bundle.events}

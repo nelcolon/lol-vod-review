@@ -4,6 +4,7 @@
  * Telestrator drawings are stored on the clip and shown for `holdMs` from their time;
  * playback pauses when it reaches one.
  */
+import { PlayFlash } from '../components/PlayFlash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ClipBundle, Drawing, DrawShape, DrawTool } from '@shared/contracts';
 import { clamp, formatGameTime, formatTime } from '@shared/timeline-math';
@@ -331,6 +332,7 @@ export function ClipView({ clipId }: { clipId: string }) {
               // The two clicks of a double-click toggle play twice, so only fullscreen changes.
               onDoubleClick={toggleFullscreen}
             />
+            <PlayFlash videoRef={videoRef} />
             <DrawLayer shapes={visibleShapes} aspect={aspect} editable={drawMode} tool={tool} color={color} onAdd={(s) => setDraft((d) => [...d, s])} />
           </div>
 

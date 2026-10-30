@@ -1207,6 +1207,7 @@ button.primary {
   flex-shrink: 0;
 }
 .video-wrap {
+  position: relative;
   min-height: 240px;
 }
 .mc-title {
@@ -1640,4 +1641,36 @@ table.games tbody tr.res-loss td:first-child {
 }
 .lib-vs {
   gap: 14px;
+}
+/* play / pause flash in the middle of the video */
+.play-flash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 84px;
+  height: 84px;
+  margin: -42px 0 0 -42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  pointer-events: none;
+  z-index: 5;
+  animation: play-flash 0.7s ease-out forwards;
+}
+@keyframes play-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
 }
