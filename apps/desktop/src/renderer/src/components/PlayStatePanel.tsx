@@ -28,7 +28,7 @@ function Icon({ v, kind, id, label, size }: { v: string | null; kind: 'item' | '
   return <img className={`dd-icon dd-${kind}`} src={`${CDN}/${v}/img/${kind}/${id}.png`} width={size} height={size} alt={label} title={label} onError={() => setBroken(true)} />;
 }
 
-function Items({ items, v, size = 30 }: { items: PlayItem[]; v: string | null; size?: number }) {
+function Items({ items, v, size = 36 }: { items: PlayItem[]; v: string | null; size?: number }) {
   return (
     <span className="ps-items">
       {items.map((it, i) => (
@@ -54,7 +54,7 @@ function KillTarget({ k, v }: { k: PlayKill; v: string | null }) {
       </span>
     );
   }
-  return <Icon v={v} kind="champion" id={k.championKey} label={label} size={22} />;
+  return <Icon v={v} kind="champion" id={k.championKey} label={label} size={32} />;
 }
 
 /** "Used" / "Bought" box: item icons with counts; purchases say whether they came after the fight. */
@@ -66,7 +66,7 @@ function ChangeBox({ kind, items, v, triggerS }: { kind: 'used' | 'bought'; item
       <span className="ps-box-label">{kind === 'used' ? 'Used' : afterFight ? 'Bought after the fight' : 'Bought'}</span>
       {items.map((c) => (
         <span key={c.id} className="ps-item">
-          <Icon v={v} kind="item" id={String(c.id)} label={`${c.name}${c.t !== null ? ` · bought at ${formatGameTime(c.t)}` : ''}`} size={26} />
+          <Icon v={v} kind="item" id={String(c.id)} label={`${c.name}${c.t !== null ? ` · bought at ${formatGameTime(c.t)}` : ''}`} size={34} />
           {c.count > 1 && <span className="ps-count">{c.count}</span>}
         </span>
       ))}
@@ -81,7 +81,7 @@ function PlayerRow({ p, v, hasItems, showGold, triggerS }: { p: PlayPlayer; v: s
     <div className={`ps-player ${involved ? 'involved' : ''} ${p.isMe ? 'me' : ''} ${fate}`}>
       <div className="ps-line">
         <span className="ps-portrait">
-          <Icon v={v} kind="champion" id={p.championKey} label={p.champion} size={30} />
+          <Icon v={v} kind="champion" id={p.championKey} label={p.champion} size={40} />
           {hasItems && (
             <span className="ps-level" title={p.level > p.levelBefore ? `Level ${p.levelBefore} → ${p.level} during the play` : `Level ${p.level}`}>
               {p.level}
@@ -90,7 +90,7 @@ function PlayerRow({ p, v, hasItems, showGold, triggerS }: { p: PlayPlayer; v: s
         </span>
         <span className="ps-spells">
           {p.spells.map((s, i) => (
-            <Icon key={i} v={v} kind="spell" id={spellIcon(s.key)} label={s.name} size={13} />
+            <Icon key={i} v={v} kind="spell" id={spellIcon(s.key)} label={s.name} size={19} />
           ))}
         </span>
         <span className="ps-who">
@@ -147,7 +147,7 @@ function PlayerRow({ p, v, hasItems, showGold, triggerS }: { p: PlayPlayer; v: s
             <span className={`ps-vs mono small ${p.vs.diff >= 0 ? 'up' : 'down'}`} title={`${p.vs.diff >= 0 ? 'Ahead of' : 'Behind'} ${p.vs.champion} (same position) by ${Math.abs(p.vs.diff)} gold in items`}>
               {p.vs.diff >= 0 ? '▲' : '▼'}
               {kGold(Math.abs(p.vs.diff))} vs
-              <Icon v={v} kind="champion" id={p.vs.championKey} label={p.vs.champion} size={18} />
+              <Icon v={v} kind="champion" id={p.vs.championKey} label={p.vs.champion} size={28} />
             </span>
           )}
         </div>
