@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { GameResult } from '@shared/contracts';
+import type { Game, GameResult } from '@shared/contracts';
 import { RECORDABLE_QUEUES } from '@shared/contracts';
 import { formatBytes, formatDate, formatDuration, RESULT_LABEL, REVIEW_LABEL, roleLabel } from '../lib/format';
 import bottomIcon from '../assets/roles/bottom.png';
@@ -11,6 +11,24 @@ import { DdIcon } from '../components/DdIcon';
 import { useStore } from '../store';
 
 const ROLE_ICON: Record<string, string> = { TOP: topIcon, JUNGLE: jungleIcon, MIDDLE: middleIcon, BOTTOM: bottomIcon, UTILITY: utilityIcon };
+
+/** Champion portraits with a role badge, side by side; the first one larger. */
+function Lineup({ champs, v }: { champs: Game['opponents']; v: string | null }) {
+  if (champs.length === 0) return <span className="muted">—</span>;
+  return (
+    <span className="lib-vs">
+      {champs.map((o, i) => (
+        <span key={o.role} className={`lib-champ ${i > 0 ? 'secondary' : ''}`} title={`${o.champion} (${roleLabel(o.role)})`}>
+          <span className="lib-portrait">
+            <DdIcon v={v} kind="champion" id={o.championKey} label={o.champion} size={i === 0 ? 36 : 32} />
+            {ROLE_ICON[o.role] && <img className="lib-role-badge" src={ROLE_ICON[o.role]} alt={roleLabel(o.role)} />}
+          </span>
+          <span>{o.champion}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export function Library() {
   const games = useStore((s) => s.games);
@@ -66,6 +84,7 @@ export function Library() {
             <tr>
               <th>Date</th>
               <th>Champion</th>
+              <th>With</th>
               <th>Against</th>
               <th>Queue</th>
               <th>Result</th>
@@ -77,7 +96,7 @@ export function Library() {
           </thead>
           <tbody>
             {filtered.map((g) => (
-              <tr key={g.id} onClick={() => void openGame(g.id)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && void openGame(g.id)}>
+              <tr key={g.id} className={`res-${g.result}`} onClick={() => void openGame(g.id)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && void openGame(g.id)}>
                 <td>{formatDate(g.startedAt)}</td>
                 <td>
                   <span className="lib-champ">
@@ -90,22 +109,10 @@ export function Library() {
                   </span>
                 </td>
                 <td>
-                  {g.opponents.length > 0 ? (
-                    <span className="lib-vs">
-                      {g.opponents.map((o, i) => (
-                        <span key={o.role} className={`lib-champ ${i > 0 ? 'secondary' : ''}`} title={`${o.champion} (${roleLabel(o.role)})`}>
-                          {i > 0 && <span className="muted lib-plus">+</span>}
-                          <span className="lib-portrait">
-                            <DdIcon v={g.iconVersion} kind="champion" id={o.championKey} label={o.champion} size={i === 0 ? 36 : 30} />
-                            {ROLE_ICON[o.role] && <img className="lib-role-badge" src={ROLE_ICON[o.role]} alt={roleLabel(o.role)} />}
-                          </span>
-                          <span>{o.champion}</span>
-                        </span>
-                      ))}
-                    </span>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
+                  <Lineup champs={g.allies} v={g.iconVersion} />
+                </td>
+                <td>
+                  <Lineup champs={g.opponents} v={g.iconVersion} />
                 </td>
                 <td>{g.queueName}</td>
                 <td>

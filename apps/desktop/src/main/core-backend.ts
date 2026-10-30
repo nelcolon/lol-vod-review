@@ -581,19 +581,24 @@ export class CoreBackend implements Backend {
   }
 
   /** Icons for the library: my champion, and the enemy in my position. */
-  private async lineup(row: { id: number; patch: string | null; my_champion: string | null }): Promise<Pick<Game, 'myChampionKey' | 'opponents' | 'iconVersion'>> {
+  private async lineup(row: { id: number; patch: string | null; my_champion: string | null }): Promise<Pick<Game, 'myChampionKey' | 'opponents' | 'allies' | 'iconVersion'>> {
     const dd = await this.ddragon.forPatch(row.patch);
     const key = (champion: string) => dd?.names[champion] ?? champion.replace(/[^A-Za-z]/g, '');
     const meName = this.store.getTimeline<{ name: string }>(row.id, 'lvr_me')?.data.name;
     const parts = this.store.listParticipants(row.id);
     const mine = parts.find((p) => p.riot_id_name === meName);
-    const opponents = (mine?.role ? (OPPONENT_ROLES[mine.role] ?? []) : []).flatMap((role) => {
-      const p = parts.find((x) => x.team !== mine!.team && x.role === role && x.champion);
-      return p ? [{ champion: p.champion!, championKey: key(p.champion!), role }] : [];
-    });
+    const roles = mine?.role ? (OPPONENT_ROLES[mine.role] ?? []) : [];
+    const pick = (roleList: string[], sameTeam: boolean) =>
+      roleList.flatMap((role) => {
+        const p = parts.find((x) => (x.team === mine!.team) === sameTeam && x.role === role && x.champion);
+        return p ? [{ champion: p.champion!, championKey: key(p.champion!), role }] : [];
+      });
+    const opponents = pick(roles, false);
+    const allies = pick(roles.slice(1), true);
     return {
       myChampionKey: row.my_champion ? key(row.my_champion) : '',
       opponents,
+      allies,
       iconVersion: dd?.version ?? null,
     };
   }

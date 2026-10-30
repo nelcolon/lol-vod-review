@@ -1619,3 +1619,25 @@ button.primary {
   border-radius: 50%;
   background: #0b0d11;
 }
+/* win / loss rows */
+table.games tbody tr.res-win td {
+  background: rgba(48, 164, 108, 0.1);
+}
+table.games tbody tr.res-loss td {
+  background: rgba(229, 72, 77, 0.1);
+}
+table.games tbody tr.res-win:hover td {
+  background: rgba(48, 164, 108, 0.18);
+}
+table.games tbody tr.res-loss:hover td {
+  background: rgba(229, 72, 77, 0.18);
+}
+table.games tbody tr.res-win td:first-child {
+  box-shadow: inset 3px 0 0 var(--win);
+}
+table.games tbody tr.res-loss td:first-child {
+  box-shadow: inset 3px 0 0 var(--loss);
+}
+.lib-vs {
+  gap: 14px;
+}

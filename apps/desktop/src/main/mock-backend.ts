@@ -490,6 +490,7 @@ export class MockBackend implements Backend {
         myChampionKey: spec.myChampion.replace(/[^A-Za-z]/g, ''),
         myRole: spec.myRole,
         opponents: (OPPONENT_ROLES[spec.myRole] ?? []).map((role) => ({ champion: MOCK_OPPONENT[role]!, championKey: MOCK_OPPONENT[role]!, role })),
+        allies: (OPPONENT_ROLES[spec.myRole] ?? []).slice(1).map((role) => ({ champion: MOCK_ALLY[role]!, championKey: MOCK_ALLY[role]!, role })),
         iconVersion: '15.20.1',
         durationS: spec.durationS,
         status: 'ready',
@@ -750,3 +751,4 @@ const MOCK_ITEMS: DdragonData['items'] = Object.fromEntries(
 );
 
 const MOCK_OPPONENT: Record<string, string> = { MIDDLE: 'Syndra', BOTTOM: 'Caitlyn', JUNGLE: 'Kayn', TOP: 'Darius', UTILITY: 'Nautilus' };
+const MOCK_ALLY: Record<string, string> = { MIDDLE: 'Ahri', BOTTOM: 'Jinx', JUNGLE: 'LeeSin', TOP: 'Garen', UTILITY: 'Thresh' };

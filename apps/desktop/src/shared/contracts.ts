@@ -48,6 +48,8 @@ export interface Game {
    * their ADC (support), their jungler (top/mid) or their mid (jungle). Empty when unknown.
    */
   opponents: Array<{ champion: string; championKey: string; role: string }>;
+  /** My partner on my team (support for bot, ADC for support, jungler for top/mid, mid for jungle). */
+  allies: Array<{ champion: string; championKey: string; role: string }>;
   /** Data Dragon version for champion icons; null offline. */
   iconVersion: string | null;
   durationS: number;
