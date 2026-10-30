@@ -1,5 +1,6 @@
 import type { Clip, Moment, Note } from '@shared/contracts';
 import { formatTime } from '@shared/timeline-math';
+import { CollapseToggle, useCollapsed } from '../lib/collapse';
 import { useStore } from '../store';
 
 interface Props {
@@ -14,11 +15,24 @@ export function NotesPanel({ notes, clips, moments, onSeek, onSelectMoment }: Pr
   const deleteNote = useStore((s) => s.deleteNote);
   const sorted = [...notes].sort((a, b) => a.videoTMs - b.videoTMs);
   const titleOf = (id: string | null) => (id ? moments.find((m) => m.id === id)?.title : null);
+  const [collapsed, toggle] = useCollapsed('notes');
+
+  if (collapsed) {
+    return (
+      <div className="notes-panel collapsed">
+        <h4>
+          <CollapseToggle collapsed onToggle={toggle} label="notes and clips" />
+          Notes & bookmarks <span className="muted small">{sorted.length}</span> · Clips <span className="muted small">{clips.length}</span>
+        </h4>
+      </div>
+    );
+  }
 
   return (
     <div className="notes-panel">
       <div className="np-col">
         <h4>
+          <CollapseToggle collapsed={false} onToggle={toggle} label="notes and clips" />
           Notes & bookmarks <span className="muted small">{sorted.length}</span>
         </h4>
         {sorted.length === 0 && <p className="muted small">Press B to drop a bookmark at the current time, or write a note on a moment.</p>}

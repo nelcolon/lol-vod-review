@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CauseTag, Moment, Note } from '@shared/contracts';
 import { CAUSE_TAGS } from '@shared/contracts';
 import { formatGameTime, formatTime } from '@shared/timeline-math';
+import { CollapseToggle, useCollapsed } from '../lib/collapse';
 import { THEME_LABEL } from '../lib/format';
 import { useStore } from '../store';
 
@@ -17,6 +18,7 @@ export function MomentCard({ moment, notes, currentMs, onSeek, onReplay }: Props
   const saveNote = useStore((s) => s.saveNote);
   const setTags = useStore((s) => s.setTags);
   const exportClip = useStore((s) => s.exportClip);
+  const [collapsed, toggle] = useCollapsed('moment');
 
   const existing = useMemo(() => notes.filter((n) => n.momentId === moment.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null, [notes, moment.id]);
   const [text, setText] = useState(existing?.text ?? '');
@@ -48,7 +50,8 @@ export function MomentCard({ moment, notes, currentMs, onSeek, onReplay }: Props
   return (
     <div className={`moment-card theme-${moment.theme}`}>
       <div className="mc-head">
-        <div>
+        <CollapseToggle collapsed={collapsed} onToggle={toggle} label="review notes" />
+        <div className="mc-title">
           <span className={`theme-chip theme-${moment.theme}`}>{THEME_LABEL[moment.theme]}</span>
           <span className="score-inline">{Math.round(moment.score * 100)}</span>
           <h3>{moment.title}</h3>
@@ -70,6 +73,8 @@ export function MomentCard({ moment, notes, currentMs, onSeek, onReplay }: Props
         </div>
       </div>
 
+      {!collapsed && (
+        <>
       <ul className="reasons">
         {moment.reasons.map((r, i) => (
           <li key={i}>{r}</li>
@@ -104,6 +109,8 @@ export function MomentCard({ moment, notes, currentMs, onSeek, onReplay }: Props
         {savedAt && !dirty && <span className="muted small">Saved</span>}
         {dirty && <span className="muted small">Unsaved changes</span>}
       </div>
+        </>
+      )}
     </div>
   );
 }

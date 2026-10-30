@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Moment, PlayItem, PlayPlayer, PlayState } from '@shared/contracts';
 import { formatGameTime } from '@shared/timeline-math';
+import { CollapseToggle, useCollapsed } from '../lib/collapse';
 
 const CDN = 'https://ddragon.leagueoflegends.com/cdn';
 
@@ -129,6 +130,7 @@ function PlayerRow({ p, v, hasItems, showGold }: { p: PlayPlayer; v: string | nu
 export function PlayStatePanel({ gameId, moment }: { gameId: string; moment: Moment }) {
   const [state, setState] = useState<PlayState | null | 'loading'>('loading');
   const [everyone, setEveryone] = useState(false);
+  const [collapsed, toggle] = useCollapsed('playState');
 
   useEffect(() => {
     let live = true;
@@ -156,15 +158,20 @@ export function PlayStatePanel({ gameId, moment }: { gameId: string; moment: Mom
   return (
     <div className="play-state">
       <div className="ps-head">
+        <CollapseToggle collapsed={collapsed} onToggle={toggle} label="game state" />
         <h4>Game state at {formatGameTime(state.triggerS)}</h4>
         <span className="muted small">
           changes from {formatGameTime(state.beforeS)} to {formatGameTime(state.afterS)}
         </span>
         <span className="spacer" />
-        <button type="button" className="link small" onClick={() => setEveryone(!everyone)}>
-          {everyone ? 'Only the players in this play' : 'Show all 10 players'}
-        </button>
+        {!collapsed && (
+          <button type="button" className="link small" onClick={() => setEveryone(!everyone)}>
+            {everyone ? 'Only the players in this play' : 'Show all 10 players'}
+          </button>
+        )}
       </div>
+      {!collapsed && (
+        <>
       <div className="ps-summary small">
         {state.myGold !== null && (
           <span title="Gold you were holding, not spent">
@@ -196,6 +203,8 @@ export function PlayStatePanel({ gameId, moment }: { gameId: string; moment: Mom
         ))}
       </div>
       <p className="muted small ps-note">Summoner spell and item cooldowns aren't available from the game, so they aren't shown as used.</p>
+        </>
+      )}
     </div>
   );
 }

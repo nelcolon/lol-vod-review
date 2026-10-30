@@ -1200,3 +1200,38 @@ button.primary {
 .ps-death {
   color: #ff8a8e;
 }
+
+/* ---- layout: the video never shrinks; panels below scroll ------------------------------ */
+.player-col > * {
+  flex-shrink: 0;
+}
+.video-wrap {
+  min-height: 240px;
+}
+.mc-title {
+  flex: 1;
+  min-width: 0;
+}
+.collapse-toggle {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  line-height: 1;
+  font-size: 13px;
+  border-radius: 6px;
+  margin-right: 4px;
+}
+.notes-panel h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.notes-panel.collapsed {
+  display: block;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.notes-panel.collapsed h4 {
+  margin: 0;
+}
