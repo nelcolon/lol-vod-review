@@ -38,8 +38,9 @@ function Items({ items, v }: { items: PlayItem[]; v: string | null }) {
 
 function PlayerRow({ p, v, hasItems, showGold }: { p: PlayPlayer; v: string | null; hasItems: boolean; showGold: boolean }) {
   const involved = p.isMe || p.roles.length > 0;
+  const fate = p.killed.length > 0 && p.killedBy.length > 0 ? 'traded' : p.killedBy.length > 0 ? 'died' : p.killed.length > 0 ? 'killer' : '';
   return (
-    <div className={`ps-player ${involved ? 'involved' : ''} ${p.isMe ? 'me' : ''}`}>
+    <div className={`ps-player ${involved ? 'involved' : ''} ${p.isMe ? 'me' : ''} ${fate}`}>
       <div className="ps-line">
         <Icon v={v} kind="champion" id={p.championKey} label={p.champion} size={28} />
         <span className="ps-spells">
@@ -69,6 +70,20 @@ function PlayerRow({ p, v, hasItems, showGold }: { p: PlayPlayer; v: string | nu
           </span>
         )}
       </div>
+      {(p.killed.length > 0 || p.killedBy.length > 0) && (
+        <div className="ps-kills small">
+          {p.killed.map((k, i) => (
+            <span key={`k${i}`} className="ps-kill">
+              killed <strong>{k.champion}</strong> <span className="mono muted">{formatGameTime(k.t)}</span>
+            </span>
+          ))}
+          {p.killedBy.map((k, i) => (
+            <span key={`d${i}`} className="ps-death">
+              killed by <strong>{k.champion}</strong> <span className="mono muted">{formatGameTime(k.t)}</span>
+            </span>
+          ))}
+        </div>
+      )}
       {hasItems && (
         <div className="ps-line">
           <Items items={p.items} v={v} />

@@ -245,6 +245,11 @@ export interface PlayItemChange {
   count: number;
 }
 
+export interface PlayKill {
+  champion: string;
+  t: number;
+}
+
 export type PlayRole = 'killer' | 'victim' | 'assist';
 
 export interface PlayPlayer {
@@ -271,6 +276,10 @@ export interface PlayPlayer {
   bought: PlayItemChange[];
   /** Gone without a purchase: sold. */
   sold: PlayItemChange[];
+  /** Champions this player killed in the play, with game time (s). */
+  killed: PlayKill[];
+  /** Who killed this player in the play (champion, or Turret/Minion/…). */
+  killedBy: PlayKill[];
   /** Total gold earned at the last full minute (League client timeline), null when unavailable. */
   totalGold: number | null;
 }

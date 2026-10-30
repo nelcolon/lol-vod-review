@@ -29,7 +29,7 @@ import type {
 } from '../shared/contracts';
 import { CAUSE_TAGS, queueName } from '../shared/contracts';
 import type { Backend } from './backend';
-import { computePlayState, involvedIn, type SavedPlayer } from './core/playstate';
+import { computePlayState, involvedIn, killsIn, type SavedPlayer } from './core/playstate';
 import type { DdragonData } from './core/ddragon';
 
 const LOADING_OFFSET_S = 4; // video time of gameTime 0
@@ -600,6 +600,7 @@ export class MockBackend implements Backend {
       beforeS: t - 10,
       afterS: t + (m.tEndMs - m.tTriggerMs) / 1000,
       involved: involvedIn(b.events.filter((e) => ids.has(e.id))),
+      kills: killsIn(b.events.filter((e) => ids.has(e.id))),
       me: { name: MOCK_ME, team: 'ORDER' },
       log: { snaps: [{ t: t - 10, players: list.map((n, i) => player(n, i, 1)) }, { t, players: list.map((n, i) => player(n, i, 0)) }], gold: [{ t, gold: 1340 }] },
       participants: [],

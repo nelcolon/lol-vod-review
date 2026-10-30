@@ -1179,3 +1179,24 @@ button.primary {
     grid-template-columns: 1fr;
   }
 }
+/* who killed whom: killers green, the dead red, both = traded */
+.ps-player.killer {
+  background: rgba(48, 164, 108, 0.16);
+}
+.ps-player.died {
+  background: rgba(229, 72, 77, 0.16);
+}
+.ps-player.traded {
+  background: linear-gradient(90deg, rgba(48, 164, 108, 0.16), rgba(229, 72, 77, 0.16));
+}
+.ps-kills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ps-kill {
+  color: #6fd3a0;
+}
+.ps-death {
+  color: #ff8a8e;
+}

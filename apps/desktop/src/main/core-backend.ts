@@ -35,7 +35,7 @@ import { Ddragon } from './core/ddragon';
 import { destroyAgents, liveFetch } from './core/http';
 import { LcuWatcher, type LcuSessionInfo } from './core/lcu';
 import { kdaOf, mapClip, mapEvent, mapGame, mapMoment, mapNote, mapSegment, type Me } from './core/mapping';
-import { computePlayState, involvedIn, readPlayersLog, type LcuTimeline, type SavedPlayer } from './core/playstate';
+import { computePlayState, involvedIn, killsIn, readPlayersLog, type LcuTimeline, type SavedPlayer } from './core/playstate';
 import { RecorderSidecar, type StoppedEvent } from './core/recorder';
 import type { CauseTag, Clip, ClipBundle, Game, GameBundle, Note, NoteInput, PlayState, RecorderStatus, Settings } from '../shared/contracts';
 import { BITRATE_PRESETS, CAUSE_TAGS } from '../shared/contracts';
@@ -654,6 +654,7 @@ export class CoreBackend implements Backend {
       beforeS: Math.max(0, triggerS - (this.settings?.preRollS ?? 10)),
       afterS: triggerS + Math.max(0, (m.t_end_ms ?? 0) - (m.t_trigger_ms ?? 0)) / 1000,
       involved: involvedIn(events),
+      kills: killsIn(events.map((e) => ({ name: e.name, payload: e.payload, gameTimeS: e.game_time_s }))),
       me: meRow,
       log: segment ? readPlayersLog(join(dirname(segment.path), 'players.jsonl')) : { snaps: [], gold: [] },
       participants: this.store.listParticipants(gid).map((p) => ({ name: p.riot_id_name, champion: p.champion ?? '', team: p.team === 'CHAOS' ? 'CHAOS' : 'ORDER' })),

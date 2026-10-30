@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computePlayState, diffItems, involvedIn, parsePlayersLog, type SavedPlayer } from './playstate';
+import { computePlayState, diffItems, involvedIn, killsIn, parsePlayersLog, type SavedPlayer } from './playstate';
 import type { DdragonData } from './ddragon';
 
 const dd: DdragonData = {
@@ -44,6 +44,10 @@ describe('playstate', () => {
       beforeS: 590,
       afterS: 605,
       involved: involvedIn([{ name: 'ChampionKill', payload: { KillerName: 'cait', VictimName: 'me', Assisters: [] } }]),
+      kills: killsIn([
+        { name: 'ChampionKill', payload: { KillerName: 'cait', VictimName: 'me' }, gameTimeS: 600 },
+        { name: 'ChampionKill', payload: { KillerName: 'Turret_T1_L_03_A', VictimName: 'cait' }, gameTimeS: 603 },
+      ]),
       me: { name: 'me', team: 'ORDER' },
       log,
       participants: [],
@@ -58,6 +62,9 @@ describe('playstate', () => {
     const [me, cait] = s.players;
     expect(me).toMatchObject({ isMe: true, roles: ['victim'], used: [{ id: 2003, name: 'Health Potion', count: 2 }], bought: [], sold: [], itemGold: 0 });
     expect(cait).toMatchObject({ roles: ['killer'], level: 11, levelBefore: 10, itemGold: 3450 });
+    expect(me!.killedBy).toEqual([{ champion: 'Caitlyn', t: 600 }]);
+    expect(cait!.killed).toEqual([{ champion: 'Sivir', t: 600 }]);
+    expect(cait!.killedBy).toEqual([{ champion: 'Turret', t: 603 }]);
   });
 
   it('reports a purchase instead of its components, and Stopwatch as used', () => {

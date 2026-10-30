@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import type { PlayItem, PlayItemChange, PlayPlayer, PlayRole, PlayState } from '../../shared/contracts';
+import type { PlayItem, PlayItemChange, PlayKill, PlayPlayer, PlayRole, PlayState } from '../../shared/contracts';
 import type { DdragonData } from './ddragon';
 
 /**
@@ -143,6 +143,8 @@ export interface PlayStateInput {
   afterS: number;
   /** Names involved in the moment's events and how. */
   involved: Map<string, PlayRole[]>;
+  /** Kills in the play (killer → victim), for "killed X / killed by Y". */
+  kills?: Kill[];
   me: { name: string; team: string } | null;
   log: PlayersLog;
   /** Used when the log is empty (games recorded before items were saved). */
@@ -165,7 +167,12 @@ export function computePlayState(input: PlayStateInput): PlayState {
     atTrigger?.players ??
     input.participants.map((p) => ({ name: p.name, champion: p.champion, championKey: '', team: p.team, level: 0, isDead: false, kills: 0, deaths: 0, assists: 0, items: [], spells: [] }));
 
+  const champOf = (name: string) => base.find((x) => x.name === name)?.champion ?? input.participants.find((x) => x.name === name)?.champion ?? nonChampion(name);
+  const kills = input.kills ?? [];
+
   const players: PlayPlayer[] = base.map((p) => {
+    const killed: PlayKill[] = kills.filter((k) => k.killer === p.name).map((k) => ({ champion: champOf(k.victim), t: k.t }));
+    const killedBy: PlayKill[] = kills.filter((k) => k.victim === p.name).map((k) => ({ champion: champOf(k.killer), t: k.t }));
     const b = before?.players.find((x) => x.name === p.name);
     const a = after?.players.find((x) => x.name === p.name);
     const diff = b && a ? diffItems(b.items, a.items, (id) => dd?.items[id]?.consumable ?? false) : { used: [], bought: [], sold: [] };
@@ -190,6 +197,8 @@ export function computePlayState(input: PlayStateInput): PlayState {
       items,
       itemGold,
       spells: p.spells,
+      killed,
+      killedBy,
       used: toChanges(diff.used),
       bought: toChanges(diff.bought),
       sold: toChanges(diff.sold),
@@ -212,6 +221,27 @@ export function computePlayState(input: PlayStateInput): PlayState {
     goldMinute: gold?.minute ?? null,
     players,
   };
+}
+
+export interface Kill {
+  killer: string;
+  victim: string;
+  t: number;
+}
+
+/** Turret_T2_C_05_A → Turret, SRU_ChaosMinionMelee → Minion; anything else as is. */
+function nonChampion(name: string): string {
+  if (/turret/i.test(name)) return 'Turret';
+  if (/minion/i.test(name)) return 'Minions';
+  if (/^SRU_/i.test(name)) return 'Monster';
+  return name || 'Unknown';
+}
+
+export function killsIn(events: Array<{ name: string; payload: Record<string, unknown>; gameTimeS: number }>): Kill[] {
+  return events
+    .filter((e) => e.name === 'ChampionKill')
+    .map((e) => ({ killer: String(e.payload['KillerName'] ?? ''), victim: String(e.payload['VictimName'] ?? ''), t: e.gameTimeS }))
+    .sort((a, b) => a.t - b.t);
 }
 
 /** Killer / victim / assisters of the moment's ChampionKill events. */
