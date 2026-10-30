@@ -2,7 +2,15 @@ import { useMemo } from 'react';
 import type { GameResult } from '@shared/contracts';
 import { RECORDABLE_QUEUES } from '@shared/contracts';
 import { formatBytes, formatDate, formatDuration, RESULT_LABEL, REVIEW_LABEL, roleLabel } from '../lib/format';
+import bottomIcon from '../assets/roles/bottom.png';
+import jungleIcon from '../assets/roles/jungle.png';
+import middleIcon from '../assets/roles/middle.png';
+import topIcon from '../assets/roles/top.png';
+import utilityIcon from '../assets/roles/utility.png';
+import { DdIcon } from '../components/DdIcon';
 import { useStore } from '../store';
+
+const ROLE_ICON: Record<string, string> = { TOP: topIcon, JUNGLE: jungleIcon, MIDDLE: middleIcon, BOTTOM: bottomIcon, UTILITY: utilityIcon };
 
 export function Library() {
   const games = useStore((s) => s.games);
@@ -58,6 +66,7 @@ export function Library() {
             <tr>
               <th>Date</th>
               <th>Champion</th>
+              <th>Against</th>
               <th>Queue</th>
               <th>Result</th>
               <th>KDA</th>
@@ -71,7 +80,24 @@ export function Library() {
               <tr key={g.id} onClick={() => void openGame(g.id)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && void openGame(g.id)}>
                 <td>{formatDate(g.startedAt)}</td>
                 <td>
-                  <strong>{g.myChampion}</strong> <span className="muted">{roleLabel(g.myRole)}</span>
+                  <span className="lib-champ">
+                    <DdIcon v={g.iconVersion} kind="champion" id={g.myChampionKey} label={g.myChampion} size={36} />
+                    {ROLE_ICON[g.myRole] ? <img className="lib-role" src={ROLE_ICON[g.myRole]} alt={roleLabel(g.myRole)} title={roleLabel(g.myRole)} /> : <span className="lib-role" />}
+                    <span>
+                      <strong>{g.myChampion}</strong>
+                      <span className="muted small">{ROLE_ICON[g.myRole] ? roleLabel(g.myRole) : ''}</span>
+                    </span>
+                  </span>
+                </td>
+                <td>
+                  {g.opponent ? (
+                    <span className="lib-champ">
+                      <DdIcon v={g.iconVersion} kind="champion" id={g.opponent.championKey} label={g.opponent.champion} size={36} />
+                      <span>{g.opponent.champion}</span>
+                    </span>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
                 </td>
                 <td>{g.queueName}</td>
                 <td>

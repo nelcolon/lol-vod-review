@@ -487,7 +487,10 @@ export class MockBackend implements Backend {
         result: spec.result,
         myPuuid: 'mock-puuid',
         myChampion: spec.myChampion,
+        myChampionKey: spec.myChampion.replace(/[^A-Za-z]/g, ''),
         myRole: spec.myRole,
+        opponent: { champion: MOCK_OPPONENT[spec.myRole] ?? 'Zed', championKey: MOCK_OPPONENT[spec.myRole] ?? 'Zed' },
+        iconVersion: '15.20.1',
         durationS: spec.durationS,
         status: 'ready',
         kills: spec.kda[0],
@@ -593,7 +596,7 @@ export class MockBackend implements Backend {
     });
     const list = [...names];
     const t = m.triggerGameTimeS;
-    const dd: DdragonData = { version: '15.20.1', champions: {}, items: MOCK_ITEMS };
+    const dd: DdragonData = { version: '15.20.1', champions: {}, names: {}, items: MOCK_ITEMS };
     const ids = new Set(m.eventIds);
     return computePlayState({
       momentId,
@@ -745,3 +748,5 @@ const MOCK_ITEMS: DdragonData['items'] = Object.fromEntries(
     ] as Array<[number, string, number, boolean?, boolean?]>
   ).map(([id, name, gold, consumable, trinket]) => [String(id), { name, gold, consumable: Boolean(consumable), trinket: Boolean(trinket) }]),
 );
+
+const MOCK_OPPONENT: Record<string, string> = { MIDDLE: 'Syndra', BOTTOM: 'Caitlyn', JUNGLE: 'Kayn', TOP: 'Darius', UTILITY: 'Nautilus' };

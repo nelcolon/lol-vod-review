@@ -249,6 +249,7 @@ table.games th {
   border-bottom: 1px solid var(--line);
 }
 table.games td {
+  vertical-align: middle;
   padding: 10px;
   border-bottom: 1px solid var(--line);
 }
@@ -1402,4 +1403,25 @@ button.primary {
 .ps-player > .ps-line:last-of-type {
   flex-wrap: wrap;
   row-gap: 4px;
+}
+
+/* ---- library: champion, lane and opponent icons --------------------------------------- */
+.lib-champ {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.lib-champ > span:last-child {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.lib-champ .dd-icon {
+  border-radius: 6px;
+}
+.lib-role {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  opacity: 0.9;
 }

@@ -31,7 +31,13 @@ export interface Game {
   result: GameResult;
   myPuuid: string;
   myChampion: string;
+  /** Data Dragon champion id for the icon ('' when unknown). */
+  myChampionKey: string;
   myRole: string;
+  /** The enemy in the same position, when known. */
+  opponent: { champion: string; championKey: string } | null;
+  /** Data Dragon version for champion icons; null offline. */
+  iconVersion: string | null;
   durationS: number;
   status: GameStatus;
   kills: number;

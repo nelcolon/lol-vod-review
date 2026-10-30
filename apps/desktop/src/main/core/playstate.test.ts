@@ -5,6 +5,7 @@ import type { DdragonData } from './ddragon';
 const dd: DdragonData = {
   version: '16.21.1',
   champions: { '51': 'Caitlyn', '15': 'Sivir' },
+  names: { Caitlyn: 'Caitlyn', Sivir: 'Sivir' },
   items: {
     '2003': { name: 'Health Potion', gold: 50, consumable: true, trinket: false },
     '3031': { name: 'Infinity Edge', gold: 3450, consumable: false, trinket: false },

@@ -22,6 +22,8 @@ export interface DdragonData {
   items: Record<string, DdItem>;
   /** Numeric champion key ("24") → Data Dragon id ("Jax"). */
   champions: Record<string, string>;
+  /** Display name ("Wukong") → Data Dragon id ("MonkeyKing"). */
+  names: Record<string, string>;
 }
 
 async function getJson(url: string): Promise<unknown> {
@@ -78,7 +80,8 @@ export class Ddragon {
   private async load(version: string): Promise<DdragonData | null> {
     const file = join(this.dir, `${version}.json`);
     try {
-      return JSON.parse(readFileSync(file, 'utf8')) as DdragonData;
+      const cached = JSON.parse(readFileSync(file, 'utf8')) as DdragonData;
+      if (cached.names) return cached; // older cache files lack `names`: refetch
     } catch {
       /* not cached yet */
     }
@@ -86,14 +89,18 @@ export class Ddragon {
       const [itemJson, champJson] = (await Promise.all([
         getJson(`${CDN}/cdn/${version}/data/en_US/item.json`),
         getJson(`${CDN}/cdn/${version}/data/en_US/champion.json`),
-      ])) as [{ data: Record<string, { name: string; gold?: { total?: number }; consumed?: boolean; tags?: string[] }> }, { data: Record<string, { id: string; key: string }> }];
+      ])) as [{ data: Record<string, { name: string; gold?: { total?: number }; consumed?: boolean; tags?: string[] }> }, { data: Record<string, { id: string; key: string; name: string }> }];
       const items: Record<string, DdItem> = {};
       for (const [id, it] of Object.entries(itemJson.data)) {
         items[id] = { name: it.name, gold: it.gold?.total ?? 0, consumable: Boolean(it.consumed), trinket: it.tags?.includes('Trinket') ?? false };
       }
       const champions: Record<string, string> = {};
-      for (const c of Object.values(champJson.data)) champions[c.key] = c.id;
-      const data: DdragonData = { version, items, champions };
+      const names: Record<string, string> = {};
+      for (const c of Object.values(champJson.data)) {
+        champions[c.key] = c.id;
+        names[c.name] = c.id;
+      }
+      const data: DdragonData = { version, items, champions, names };
       mkdirSync(this.dir, { recursive: true });
       writeFileSync(file, JSON.stringify(data));
       return data;

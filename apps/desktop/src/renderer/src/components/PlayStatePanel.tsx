@@ -6,27 +6,13 @@ import goldIcon from '../assets/ui/gold.png';
 import scoreIcon from '../assets/ui/score.png';
 import shopIcon from '../assets/ui/shop.png';
 import { CollapseToggle, useCollapsed } from '../lib/collapse';
-
-const CDN = 'https://ddragon.leagueoflegends.com/cdn';
+import { DdIcon as Icon } from './DdIcon';
 
 /** Data Dragon has one icon per base spell: Unleashed Teleport → Teleport, Primal Smite → Smite. */
 const spellIcon = (key: string) => (key.startsWith('SummonerSmite') ? 'SummonerSmite' : key.replace(/Upgrade$/, ''));
 
 const kGold = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)}k` : String(g));
 const ROLE_LABEL = { killer: 'Killer', victim: 'Died', assist: 'Assist' } as const;
-
-/** Data Dragon icon, or a text chip when there is no version/icon (offline, new item, upgraded spell). */
-function Icon({ v, kind, id, label, size }: { v: string | null; kind: 'item' | 'champion' | 'spell'; id: string; label: string; size: number }) {
-  const [broken, setBroken] = useState(false);
-  if (!v || !id || broken) {
-    return (
-      <span className={`dd-icon dd-text dd-${kind}`} style={{ width: size, height: size }} title={label}>
-        {label.slice(0, 2)}
-      </span>
-    );
-  }
-  return <img className={`dd-icon dd-${kind}`} src={`${CDN}/${v}/img/${kind}/${id}.png`} width={size} height={size} alt={label} title={label} onError={() => setBroken(true)} />;
-}
 
 function Items({ items, v, size = 36 }: { items: PlayItem[]; v: string | null; size?: number }) {
   return (

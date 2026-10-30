@@ -1,6 +1,6 @@
 {
   "name": "@lvr/desktop",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": true,
   "description": "Records your League of Legends games and finds the moments worth reviewing.",
   "main": "./out/main/index.js",

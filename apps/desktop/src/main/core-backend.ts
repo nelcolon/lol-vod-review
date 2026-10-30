@@ -576,9 +576,23 @@ export class CoreBackend implements Backend {
   }
 
   async listGames(): Promise<Game[]> {
-    return this.store
-      .listGames({ status: ['recording', 'processing', 'ready', 'error'] })
-      .map((row) => mapGame(row, kdaOf(this.store.listEvents(row.id), this.meOf(row.id)), row.size_bytes));
+    const rows = this.store.listGames({ status: ['recording', 'processing', 'ready', 'error'] });
+    return Promise.all(rows.map(async (row) => ({ ...mapGame(row, kdaOf(this.store.listEvents(row.id), this.meOf(row.id)), row.size_bytes), ...(await this.lineup(row)) })));
+  }
+
+  /** Icons for the library: my champion, and the enemy in my position. */
+  private async lineup(row: { id: number; patch: string | null; my_champion: string | null }): Promise<Pick<Game, 'myChampionKey' | 'opponent' | 'iconVersion'>> {
+    const dd = await this.ddragon.forPatch(row.patch);
+    const key = (champion: string) => dd?.names[champion] ?? champion.replace(/[^A-Za-z]/g, '');
+    const meName = this.store.getTimeline<{ name: string }>(row.id, 'lvr_me')?.data.name;
+    const parts = this.store.listParticipants(row.id);
+    const mine = parts.find((p) => p.riot_id_name === meName);
+    const opp = mine?.role && mine.role !== 'NONE' ? parts.find((p) => p.team !== mine.team && p.role === mine.role) : undefined;
+    return {
+      myChampionKey: row.my_champion ? key(row.my_champion) : '',
+      opponent: opp?.champion ? { champion: opp.champion, championKey: key(opp.champion) } : null,
+      iconVersion: dd?.version ?? null,
+    };
   }
 
   async getGame(id: string): Promise<GameBundle | null> {
@@ -589,7 +603,7 @@ export class CoreBackend implements Backend {
     const byEventId = new Map(events.map((e) => [e.event_id, e.id]));
     const size = detail.segments.reduce((n, s) => n + s.size_bytes, 0);
     return {
-      game: mapGame(detail.game, kdaOf(events, me), size),
+      game: { ...mapGame(detail.game, kdaOf(events, me), size), ...(await this.lineup(detail.game)) },
       segments: detail.segments.map(mapSegment),
       events: events.map((e) => mapEvent(e, me)),
       moments: detail.moments
