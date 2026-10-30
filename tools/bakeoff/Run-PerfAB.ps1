@@ -24,6 +24,8 @@ if (-not $isAdmin) {
 }
 
 $here = $PSScriptRoot
+# leftovers from an interrupted run would make PresentMon refuse to start
+foreach ($n in @("PresentMon") + (& logman.exe query -ets | Select-String -Pattern "lvr-bakeoff-\d+" | ForEach-Object { $_.Matches.Value })) { & logman.exe stop $n -ets 2>&1 | Out-Null }
 if (-not (Get-Process "League of Legends" -ErrorAction SilentlyContinue)) { throw "Start a League game (Practice Tool is fine) first." }
 $others = Get-Process "Insights Capture", "obs64", "LoL VOD Review" -ErrorAction SilentlyContinue
 if ($others) { Write-Warning ("Still running, results will be skewed: " + (($others | Select-Object -ExpandProperty ProcessName -Unique) -join ", ")) }

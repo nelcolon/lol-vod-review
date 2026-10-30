@@ -125,11 +125,12 @@ Note ("target: pid {0} '{1}' hwnd {2} title '{3}'" -f $target.Id, $target.Proces
 if (-not $WindowTitle -and $procBase -eq "League of Legends") { Start-Sleep -Seconds 3 }
 
 # ---------------------------------------------------------------- helpers
-function Start-Redirected([string]$exe, [string]$args, [string]$stdoutFile, [string]$stderrFile, [bool]$stdin) {
+# ($args is PowerShell's automatic variable: naming a parameter that silently drops it)
+function Start-Redirected([string]$exe, [string]$argLine, [string]$stdoutFile, [string]$stderrFile, [bool]$stdin) {
     # cmd.exe does the file redirection so we can still drive stdin from here.
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "cmd.exe"
-    $psi.Arguments = "/d /c `"`"$exe`" $args > `"$stdoutFile`" 2> `"$stderrFile`"`""
+    $psi.Arguments = "/d /c `"`"$exe`" $argLine > `"$stdoutFile`" 2> `"$stderrFile`"`""
     $psi.UseShellExecute = $false
     $psi.RedirectStandardInput = $stdin
     $psi.CreateNoWindow = $true
@@ -246,7 +247,9 @@ $pmProc = $null
 $nvProc = $null
 $pmError = $null
 if ($usePresentMon) {
-    $pmArgs = "--process_name `"$ProcessName`" --output_file `"$pmCsv`" --timed $Seconds --terminate_after_timed --stop_existing_session --no_console_stats --qpc_time --track_gpu_video"
+    # own session name per run, so a killed run cannot block the next one
+    $pmSession = "lvr-bakeoff-" + (Get-Date -Format "HHmmss")
+    $pmArgs = "--process_name `"$ProcessName`" --output_file `"$pmCsv`" --timed $Seconds --terminate_after_timed --session_name $pmSession --stop_existing_session --no_console_stats --qpc_time --track_gpu_video"
     Note "PresentMon $pmArgs"
     $pmProc = Start-Redirected $presentMon $pmArgs (Join-Path $outDir "presentmon-stdout.log") $pmLog $false
 }
@@ -269,6 +272,7 @@ $measureEnd = Get-Date
 # ---------------------------------------------------------------- stop everything
 if ($pmProc) {
     if (-not $pmProc.WaitForExit(15000)) { Stop-Tree $pmProc; Note "PresentMon killed after timeout" }
+    & logman.exe stop $pmSession -ets 2>&1 | Out-Null
     if ($pmProc.ExitCode -ne 0 -and -not $pmError) { $pmError = "PresentMon exit code $($pmProc.ExitCode); see $pmLog" ; Note $pmError }
 }
 if ($nvProc) { if (-not $nvProc.WaitForExit(5000)) { Stop-Tree $nvProc } }
