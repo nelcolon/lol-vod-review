@@ -28,7 +28,7 @@ One JSON object per line. Commands on stdin (`cmd`), events on stdout (`ev`). Fi
 
 | `cmd` | Fields | Notes |
 |---|---|---|
-| `start` | `out` (required), `target`, `fps` (60), `bitrateMbps` (12), `width`/`height` (null = first frame size), `audio` `{game: true, mic: false}`, `cursor` (false), `border` (false), `codec` (`h264` \| `hevc`) | One session at a time |
+| `start` | `out` (required), `target`, `fps` (60), `bitrateMbps` (12), `width`/`height` (null = first frame size), `audio` `{game: true, mic: false, micVolume: 100}` (mic gain %, 0–400), `cursor` (false), `border` (false), `codec` (`h264` \| `hevc`) | One session at a time |
 | `stop` | — | Finalizes the MP4, replies `stopped` |
 | `status` | — | Replies `status` |
 | `list-windows` / `list-monitors` | — | Replies `windows` / `monitors` |

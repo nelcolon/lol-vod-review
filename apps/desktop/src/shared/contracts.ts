@@ -366,6 +366,8 @@ export interface Settings {
   preRollS: number;
   /** Mix the default microphone into the recording's audio. */
   recordMic: boolean;
+  /** Mic gain in percent (0-300). */
+  micVolume: number;
   autostart: boolean;
   minimizeToTray: boolean;
 }
@@ -377,6 +379,7 @@ export const DEFAULT_SETTINGS: Settings = {
   queues: RECORDABLE_QUEUES.filter((q) => q.defaultOn).map((q) => q.id),
   preRollS: 10,
   recordMic: true,
+  micVolume: 100,
   autostart: false,
   minimizeToTray: true,
 };

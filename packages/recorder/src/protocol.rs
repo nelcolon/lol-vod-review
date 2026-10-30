@@ -99,10 +99,17 @@ pub struct AudioParams {
     pub game: bool,
     #[serde(default)]
     pub mic: bool,
+    /// Mic gain in percent (0-400, default 100).
+    #[serde(default = "default_mic_volume")]
+    pub mic_volume: u32,
 }
 
 fn default_true() -> bool {
     true
+}
+
+fn default_mic_volume() -> u32 {
+    100
 }
 
 impl Default for AudioParams {
@@ -110,6 +117,7 @@ impl Default for AudioParams {
         AudioParams {
             game: true,
             mic: false,
+            mic_volume: 100,
         }
     }
 }

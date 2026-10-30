@@ -61,17 +61,20 @@ const STALL_FILL_KEEP_MS: i64 = 100;
 pub struct MicBuffer {
     q: Mutex<VecDeque<i16>>,
     cap: usize,
+    /// Gain applied on push, in percent.
+    volume: i32,
 }
 
 impl MicBuffer {
-    pub fn new(rate: u32) -> Self {
+    pub fn new(rate: u32, volume_pct: u32) -> Self {
         let cap = rate as usize * 2 * MIC_MAX_BUFFER_MS / 1000;
-        MicBuffer { q: Mutex::new(VecDeque::with_capacity(cap)), cap }
+        MicBuffer { q: Mutex::new(VecDeque::with_capacity(cap)), cap, volume: volume_pct.min(400) as i32 }
     }
 
     pub fn push(&self, samples: &[i16]) {
         let mut q = self.q.lock();
-        q.extend(samples.iter().copied());
+        let vol = self.volume;
+        q.extend(samples.iter().map(|&v| (v as i32 * vol / 100).clamp(i16::MIN as i32, i16::MAX as i32) as i16));
         let over = q.len().saturating_sub(self.cap);
         // keep whole stereo frames
         q.drain(..over + over % 2);
@@ -654,7 +657,7 @@ mod tests {
 
     #[test]
     fn mic_is_mixed_saturating_and_missing_mic_is_silence() {
-        let mic = MicBuffer::new(48_000);
+        let mic = MicBuffer::new(48_000, 100);
         mic.push(&[1000, -1000, 30_000, 30_000]);
         let mut pcm: Vec<u8> = [500i16, 500, 10_000, -10_000, 7, 7].iter().flat_map(|v| v.to_le_bytes()).collect();
         mic.mix_into(&mut pcm);
@@ -664,8 +667,23 @@ mod tests {
     }
 
     #[test]
+    fn mic_volume_scales_and_clamps() {
+        let mic = MicBuffer::new(48_000, 200);
+        mic.push(&[1000, -20_000]);
+        let mut pcm = vec![0u8; 4];
+        mic.mix_into(&mut pcm);
+        let s: Vec<i16> = pcm.chunks(2).map(|c| i16::from_le_bytes([c[0], c[1]])).collect();
+        assert_eq!(s, vec![2000, i16::MIN]);
+        let muted = MicBuffer::new(48_000, 0);
+        muted.push(&[1000, 1000]);
+        let mut pcm = vec![0u8; 4];
+        muted.mix_into(&mut pcm);
+        assert_eq!(pcm, vec![0u8; 4]);
+    }
+
+    #[test]
     fn mic_buffer_drops_oldest_beyond_its_cap() {
-        let mic = MicBuffer::new(1000); // cap = 1000 * 2 * 0.5 = 1000 samples
+        let mic = MicBuffer::new(1000, 100); // cap = 1000 * 2 * 0.5 = 1000 samples
         let data: Vec<i16> = (0..1200).map(|i| i as i16).collect();
         mic.push(&data);
         assert_eq!(mic.len(), 1000);

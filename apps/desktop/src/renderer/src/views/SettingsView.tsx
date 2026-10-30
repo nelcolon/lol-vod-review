@@ -53,6 +53,22 @@ export function SettingsView() {
           Record my microphone
           <span className="muted small">Your voice is mixed with the game audio (uses Windows' default recording device). Applies from the next game.</span>
         </label>
+        <label className="row">
+          Microphone volume
+          <span className="inline">
+            <input
+              type="range"
+              min={0}
+              max={300}
+              step={5}
+              value={settings.micVolume}
+              disabled={!settings.recordMic}
+              onChange={(e) => void update({ micVolume: Number(e.target.value) })}
+            />
+            <span className="mono">{settings.micVolume}%</span>
+          </span>
+          <span className="muted small">100% is your mic as Windows hears it; raise it if your voice is quiet next to the game.</span>
+        </label>
       </fieldset>
 
       <fieldset>

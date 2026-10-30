@@ -56,6 +56,7 @@ self-test options:
   --hevc             HEVC instead of H.264
   --no-audio         disable system loopback audio
   --mic              mix the default microphone into the audio
+  --mic-volume PCT   mic gain in percent, 0-400 (default 100)
   --cursor           include the cursor
   --border           keep the yellow WGC border
 "
@@ -270,6 +271,7 @@ fn self_test(args: &[String], emitter: Emitter) -> i32 {
         audio: AudioParams {
             game: !args.iter().any(|a| a == "--no-audio"),
             mic: args.iter().any(|a| a == "--mic"),
+            mic_volume: arg_value(args, "--mic-volume").and_then(|v| v.parse().ok()).unwrap_or(100),
         },
         cursor: args.iter().any(|a| a == "--cursor"),
         border: args.iter().any(|a| a == "--border"),

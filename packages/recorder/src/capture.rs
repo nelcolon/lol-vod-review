@@ -331,7 +331,7 @@ impl Session {
         let mut mic: Option<AudioHandle> = None;
         if params.audio.game {
             // The mic is mixed into the loopback track, so it is opened at the loopback's rate.
-            let mic_buf = params.audio.mic.then(|| Arc::new(audio::MicBuffer::new(48_000)));
+            let mic_buf = params.audio.mic.then(|| Arc::new(audio::MicBuffer::new(48_000, params.audio.mic_volume)));
             match audio::spawn_system_loopback(AudioShared {
                 sink: slot.clone(),
                 first_frame_hns: shared.first_frame_hns.clone(),
