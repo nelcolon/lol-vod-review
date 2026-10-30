@@ -61,7 +61,7 @@ describe('playstate', () => {
     expect(s.hasItems).toBe(true);
     expect(s.myGold).toBe(1250);
     const [me, cait] = s.players;
-    expect(me).toMatchObject({ isMe: true, roles: ['victim'], used: [{ id: 2003, name: 'Health Potion', count: 2 }], bought: [], sold: [], itemGold: 0 });
+    expect(me).toMatchObject({ isMe: true, roles: ['victim'], used: [{ id: 2003, name: 'Health Potion', count: 2, t: null }], bought: [], sold: [], itemGold: 0 });
     expect(cait).toMatchObject({ roles: ['killer'], level: 11, levelBefore: 10, itemGold: 3450 });
     expect(me!.killedBy).toEqual([{ champion: 'Caitlyn', championKey: 'Caitlyn', t: 600 }]);
     expect(cait!.killed).toEqual([{ champion: 'Sivir', championKey: 'Sivir', t: 600 }]);
@@ -76,6 +76,25 @@ describe('playstate', () => {
     expect(diffItems(items([3133, 3035, 2003]), items([6694]), consumable)).toEqual({ used: [[2003, 1]], bought: [[6694, 1]], sold: [] });
     expect(diffItems(items([2420, 3031]), items([2421, 3031]), consumable)).toEqual({ used: [[2420, 1]], bought: [], sold: [] });
     expect(diffItems(items([3031]), items([]), consumable)).toEqual({ used: [], bought: [], sold: [[3031, 1]] });
+  });
+
+  it("ignores Viego's possession (his items mirror another player's) and times purchases", () => {
+    const viego = (items: Array<[number, number]>) => ({ ...p('viego', 'Viego', 'ORDER', 16, items), position: 'JUNGLE' });
+    const wu = p('wu', 'Wukong', 'CHAOS', 15, [[3078, 1], [6610, 1]]);
+    const log2 = parsePlayersLog(
+      [
+        { t: 100, players: [viego([[3031, 1]]), wu] },
+        { t: 105, players: [viego([[3078, 1], [6610, 1]]), wu] }, // possessing Wukong
+        { t: 112, players: [viego([[3031, 1], [2003, 1]]), wu] }, // back to his own build + bought a potion
+      ]
+        .map((o) => JSON.stringify(o))
+        .join('\n'),
+    );
+    const s = computePlayState({ momentId: '1', triggerS: 106, beforeS: 96, afterS: 115, involved: new Map(), me: null, log: log2, participants: [], lcu: null, dd });
+    const v = s.players.find((x) => x.name === 'viego')!;
+    expect(v.items.map((i) => i.id)).toEqual([3031]);
+    expect(v.bought).toEqual([{ id: 2003, name: 'Health Potion', count: 1, t: 112 }]);
+    expect(v.used).toEqual([]);
   });
 
   it('falls back to participants and minute gold when items were not saved', () => {

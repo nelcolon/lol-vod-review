@@ -158,15 +158,48 @@ export interface PlayStateInput {
 export function computePlayState(input: PlayStateInput): PlayState {
   const { log, dd } = input;
   const item = (id: number, count: number): PlayItem => ({ id, name: dd?.items[id]?.name ?? `Item ${id}`, count, gold: dd?.items[id]?.gold ?? 0 });
-  const change = (id: number, count: number): PlayItemChange => ({ id, name: dd?.items[id]?.name ?? `Item ${id}`, count });
+  const change = (id: number, count: number): PlayItemChange => ({ id, name: dd?.items[id]?.name ?? `Item ${id}`, count, t: null });
   const gold = minuteGold(input.lcu, input.triggerS, dd);
 
-  const before = at(log.snaps, input.beforeS);
   const atTrigger = at(log.snaps, input.triggerS + 0.5);
-  const after = at(log.snaps, input.afterS);
+
+  // Viego: while possessing, the game reports the possessed champion's items as his. Snapshots
+  // where a player's build equals another player's are skipped for the item diff and display.
+  const buildKey = (p: SavedPlayer) =>
+    p.items
+      .filter((i) => i.slot !== 6)
+      .map((i) => i.id)
+      .sort((x, y) => x - y)
+      .join(',');
+  const mirrors = (p: SavedPlayer, snap: { players: SavedPlayer[] }) => {
+    const k = buildKey(p);
+    return k !== '' && snap.players.some((o) => o.name !== p.name && buildKey(o) === k);
+  };
+  /** The player's own entry in the last snapshot at or before `t` that is not a possession mirror. */
+  const ownAt = (name: string, t: number): SavedPlayer | undefined => {
+    let found: SavedPlayer | undefined;
+    for (const snap of log.snaps) {
+      if (snap.t > t && found) break;
+      const p = snap.players.find((x) => x.name === name);
+      if (p && !mirrors(p, snap)) found = p;
+      if (snap.t > t) break;
+    }
+    return found;
+  };
+  /** First time inside the window that the player held more of `id` than at the start. */
+  const boughtAt = (name: string, id: number, startCount: number): number | null => {
+    for (const snap of log.snaps) {
+      if (snap.t <= input.beforeS) continue;
+      if (snap.t > input.afterS) break;
+      const p = snap.players.find((x) => x.name === name);
+      if (!p || mirrors(p, snap)) continue;
+      if ((countById(p.items).get(id) ?? 0) > startCount) return snap.t;
+    }
+    return null;
+  };
 
   const base: SavedPlayer[] =
-    atTrigger?.players ??
+    atTrigger?.players.map((p) => (mirrors(p, atTrigger) ? { ...p, items: ownAt(p.name, input.triggerS)?.items ?? p.items } : p)) ??
     input.participants.map((p) => ({ name: p.name, champion: p.champion, championKey: '', team: p.team, level: 0, isDead: false, kills: 0, deaths: 0, assists: 0, items: [], spells: [] }));
 
   const champOf = (name: string) => base.find((x) => x.name === name)?.champion ?? input.participants.find((x) => x.name === name)?.champion ?? nonChampion(name);
@@ -185,10 +218,12 @@ export function computePlayState(input: PlayStateInput): PlayState {
     const killedBy: PlayKill[] = kills.filter((k) => k.victim === p.name).map((k) => kill(k.killer, k.t));
     const pos = positionOf(p);
     const opp = pos ? base.find((x) => x.team !== p.team && positionOf(x) === pos) : undefined;
-    const b = before?.players.find((x) => x.name === p.name);
-    const a = after?.players.find((x) => x.name === p.name);
+    const b = ownAt(p.name, input.beforeS);
+    const a = ownAt(p.name, input.afterS);
     const diff = b && a ? diffItems(b.items, a.items, (id) => dd?.items[id]?.consumable ?? false) : { used: [], bought: [], sold: [] };
-    const toChanges = (list: Array<[number, number]>) => list.map(([id, n]) => change(id, n));
+    const startCounts = b ? countById(b.items) : new Map<number, number>();
+    const toChanges = (list: Array<[number, number]>, timed = false) =>
+      list.map(([id, n]) => ({ ...change(id, n), t: timed ? boughtAt(p.name, id, startCounts.get(id) ?? 0) : null }));
     const items = [...p.items].sort((x, y) => x.slot - y.slot).map((i) => item(i.id, i.count));
     const itemGold = itemGoldOf(p);
     return {
@@ -210,7 +245,7 @@ export function computePlayState(input: PlayStateInput): PlayState {
       killedBy,
       vs: opp ? { champion: opp.champion, championKey: opp.championKey, diff: itemGold - itemGoldOf(opp) } : null,
       used: toChanges(diff.used),
-      bought: toChanges(diff.bought),
+      bought: toChanges(diff.bought, true),
       sold: toChanges(diff.sold),
       totalGold: gold?.byName.get(p.name) ?? gold?.byChamp.get(p.championKey) ?? null,
     };

@@ -1311,3 +1311,26 @@ button.primary {
   height: 21px;
   margin: -2px 0;
 }
+/* used / bought boxes */
+.ps-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.22);
+}
+.ps-box-label {
+  font-size: 11px;
+  margin-right: 2px;
+}
+.ps-box-used .ps-box-label {
+  color: #ffb224;
+}
+.ps-box-bought .ps-box-label {
+  color: #6fd3a0;
+}
+.ps-changes {
+  align-items: center;
+}

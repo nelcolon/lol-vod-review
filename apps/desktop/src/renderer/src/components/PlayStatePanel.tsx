@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { Moment, PlayItem, PlayKill, PlayPlayer, PlayState } from '@shared/contracts';
+import type { Moment, PlayItem, PlayItemChange, PlayKill, PlayPlayer, PlayState } from '@shared/contracts';
 import { formatGameTime } from '@shared/timeline-math';
 import deadIcon from '../assets/ui/dead.png';
 import goldIcon from '../assets/ui/gold.png';
 import scoreIcon from '../assets/ui/score.png';
+import shopIcon from '../assets/ui/shop.png';
 import { CollapseToggle, useCollapsed } from '../lib/collapse';
 
 const CDN = 'https://ddragon.leagueoflegends.com/cdn';
@@ -27,12 +28,12 @@ function Icon({ v, kind, id, label, size }: { v: string | null; kind: 'item' | '
   return <img className={`dd-icon dd-${kind}`} src={`${CDN}/${v}/img/${kind}/${id}.png`} width={size} height={size} alt={label} title={label} onError={() => setBroken(true)} />;
 }
 
-function Items({ items, v }: { items: PlayItem[]; v: string | null }) {
+function Items({ items, v, size = 30 }: { items: PlayItem[]; v: string | null; size?: number }) {
   return (
     <span className="ps-items">
       {items.map((it, i) => (
         <span key={i} className="ps-item">
-          <Icon v={v} kind="item" id={String(it.id)} label={`${it.name}${it.gold ? ` (${it.gold} g)` : ''}`} size={22} />
+          <Icon v={v} kind="item" id={String(it.id)} label={`${it.name}${it.gold ? ` (${it.gold} g)` : ''}`} size={size} />
           {it.count > 1 && <span className="ps-count">{it.count}</span>}
         </span>
       ))}
@@ -56,7 +57,24 @@ function KillTarget({ k, v }: { k: PlayKill; v: string | null }) {
   return <Icon v={v} kind="champion" id={k.championKey} label={label} size={22} />;
 }
 
-function PlayerRow({ p, v, hasItems, showGold }: { p: PlayPlayer; v: string | null; hasItems: boolean; showGold: boolean }) {
+/** "Used" / "Bought" box: item icons with counts; purchases say whether they came after the fight. */
+function ChangeBox({ kind, items, v, triggerS }: { kind: 'used' | 'bought'; items: PlayItemChange[]; v: string | null; triggerS: number }) {
+  const afterFight = kind === 'bought' && items.every((c) => c.t !== null && c.t > triggerS);
+  return (
+    <div className={`ps-box ps-box-${kind}`}>
+      {kind === 'bought' && <img className="ui-icon" src={shopIcon} alt="shop" />}
+      <span className="ps-box-label">{kind === 'used' ? 'Used' : afterFight ? 'Bought after the fight' : 'Bought'}</span>
+      {items.map((c) => (
+        <span key={c.id} className="ps-item">
+          <Icon v={v} kind="item" id={String(c.id)} label={`${c.name}${c.t !== null ? ` · bought at ${formatGameTime(c.t)}` : ''}`} size={26} />
+          {c.count > 1 && <span className="ps-count">{c.count}</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function PlayerRow({ p, v, hasItems, showGold, triggerS }: { p: PlayPlayer; v: string | null; hasItems: boolean; showGold: boolean; triggerS: number }) {
   const involved = p.isMe || p.roles.length > 0;
   const fate = p.killed.length > 0 && p.killedBy.length > 0 ? 'traded' : p.killedBy.length > 0 ? 'died' : p.killed.length > 0 ? 'killer' : '';
   return (
@@ -142,18 +160,8 @@ function PlayerRow({ p, v, hasItems, showGold }: { p: PlayPlayer; v: string | nu
       )}
       {(p.used.length > 0 || p.bought.length > 0 || p.sold.length > 0) && (
         <div className="ps-changes small">
-          {p.used.map((c) => (
-            <span key={`u${c.id}`} className="ps-used">
-              used {c.count > 1 ? `${c.count}× ` : ''}
-              {c.name}
-            </span>
-          ))}
-          {p.bought.map((c) => (
-            <span key={`b${c.id}`} className="ps-gained">
-              bought {c.count > 1 ? `${c.count}× ` : ''}
-              {c.name}
-            </span>
-          ))}
+          {p.used.length > 0 && <ChangeBox kind="used" items={p.used} v={v} triggerS={triggerS} />}
+          {p.bought.length > 0 && <ChangeBox kind="bought" items={p.bought} v={v} triggerS={triggerS} />}
           {p.sold.map((c) => (
             <span key={`s${c.id}`} className="muted">
               sold {c.count > 1 ? `${c.count}× ` : ''}
@@ -237,7 +245,7 @@ export function PlayStatePanel({ gameId, moment }: { gameId: string; moment: Mom
             {shown
               .filter((p) => (p.team === myTeam) === mine)
               .map((p) => (
-                <PlayerRow key={p.name} p={p} v={v} hasItems={state.hasItems} showGold={showGold} />
+                <PlayerRow key={p.name} p={p} v={v} hasItems={state.hasItems} showGold={showGold} triggerS={state.triggerS} />
               ))}
           </div>
         ))}

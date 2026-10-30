@@ -241,8 +241,10 @@ export interface PlayItem {
 export interface PlayItemChange {
   id: number;
   name: string;
-  /** Units used/lost (on `used`) or gained (on `gained`). */
+  /** Units used, bought or sold. */
   count: number;
+  /** Game time (s) it was bought, for purchases; null otherwise. */
+  t: number | null;
 }
 
 export interface PlayKill {
