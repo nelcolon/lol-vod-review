@@ -102,6 +102,11 @@ npm run smoke -w apps/desktop   # end-to-end smoke test of the built app
 npm run dist                    # local installer -> apps/desktop/release/
 ```
 
+**Measuring resource use:** `powershell -ExecutionPolicy Bypass -File tools\measure-resources.ps1 -Seconds 120`
+samples CPU, RAM, GPU (3D and video encoder) and disk writes per app: LoL VOD Review, Insights
+Capture, OBS, Outplayed/Overwolf, Medal, the NVIDIA overlay and League itself. Run it while a game
+is being recorded.
+
 Notes:
 
 - The recorder links the C runtime statically (`packages/recorder/.cargo/config.toml`), so users
