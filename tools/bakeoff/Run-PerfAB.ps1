@@ -12,13 +12,15 @@
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tools\bakeoff\Run-PerfAB.ps1 -Seconds 45
 #>
-param([int]$Seconds = 45, [int]$Rounds = 2, [string]$Label = "perf-ab")
+param([int]$Seconds = 45, [int]$Rounds = 2, [string]$Label = "perf-ab",
+    # "recorders" = baseline / legacy / light; "methods" = baseline / WGC window / WGC monitor / DXGI duplication (ffmpeg ddagrab)
+    [ValidateSet("recorders", "methods")][string]$Compare = "recorders")
 $ErrorActionPreference = "Stop"
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
     $log = Join-Path $env:TEMP "lvr-perfab.log"
-    Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"& '$PSCommandPath' -Seconds $Seconds -Rounds $Rounds -Label $Label *>&1 | Tee-Object -FilePath '$log'`""
+    Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"& '$PSCommandPath' -Seconds $Seconds -Rounds $Rounds -Label $Label -Compare $Compare *>&1 | Tee-Object -FilePath '$log'`""
     Get-Content $log
     return
 }
@@ -32,14 +34,26 @@ if ($others) { Write-Warning ("Still running, results will be skewed: " + (($oth
 
 $runs = @()
 for ($r = 1; $r -le $Rounds; $r++) {
-    foreach ($v in @(@{ b = "none"; p = "light" }, @{ b = "recorder"; p = "legacy" }, @{ b = "recorder"; p = "light" })) {
-        $name = if ($v.b -eq "none") { "baseline" } else { "recorder-$($v.p)" }
+    $variants = if ($Compare -eq "methods") {
+        @(@{ n = "baseline"; b = "none" }, @{ n = "wgc-window"; b = "recorder" }, @{ n = "wgc-monitor"; b = "recorder"; m = $true }, @{ n = "dxgi-dup"; b = "ddagrab" })
+    } else {
+        @(@{ n = "baseline"; b = "none" }, @{ n = "recorder-legacy"; b = "recorder"; p = "legacy" }, @{ n = "recorder-light"; b = "recorder" })
+    }
+    foreach ($v in $variants) {
+        $name = $v.n
         Write-Host "round $r/$Rounds  $name  ($Seconds s)..."
-        & (Join-Path $here "Run-Bakeoff.ps1") -Backend $v.b -Perf $v.p -Seconds $Seconds -Label "$Label-$name" -NoNvidiaSmi | Out-Null
+        $extra = @{}
+        if ($v.p) { $extra.Perf = $v.p }
+        if ($v.m) { $extra.Monitor = $true }
+        & (Join-Path $here "Run-Bakeoff.ps1") -Backend $v.b -Seconds $Seconds -Label "$Label-$name" -NoNvidiaSmi @extra | Out-Null
         $dir = Get-ChildItem (Join-Path $here "results") -Directory | Sort-Object LastWriteTime | Select-Object -Last 1
         $sum = Get-Content (Join-Path $dir.FullName "summary.json") -Raw | ConvertFrom-Json
         $pm = $sum.presentMon
-        $runs += [pscustomobject]@{ Round = $r; Run = $name; AvgFps = [double]$pm.avgFps; Low1 = [double]$pm.onePercentLowFps; Dir = $dir.Name }
+        $csvRows = Import-Csv (Join-Path $dir.FullName "presentmon.csv") | Where-Object Application -eq "League of Legends.exe" | Select-Object -Skip 60
+        $direct = @($csvRows | Where-Object PresentMode -like "Hardware*").Count
+        $disp = ($csvRows | Where-Object { $_.MsUntilDisplayed -ne "NA" } | Measure-Object { [double]$_.MsUntilDisplayed } -Average).Average
+        $runs += [pscustomobject]@{ Round = $r; Run = $name; AvgFps = [double]$pm.avgFps; Low1 = [double]$pm.onePercentLowFps
+            DirectPct = if ($csvRows.Count) { 100.0 * $direct / $csvRows.Count } else { 0 }; DisplayMs = [double]$disp; Dir = $dir.Name }
         Start-Sleep 3
     }
 }
@@ -48,7 +62,7 @@ $base = $runs | Where-Object Run -eq "baseline"
 $baseAvg = ($base | Measure-Object AvgFps -Average).Average
 $baseLow = ($base | Measure-Object Low1 -Average).Average
 "`nPer run:"
-$runs | Format-Table Round, Run, @{ n = "Avg FPS"; e = { "{0:N1}" -f $_.AvgFps } }, @{ n = "1% low"; e = { "{0:N1}" -f $_.Low1 } }, Dir -AutoSize | Out-String -Width 200
+$runs | Format-Table Round, Run, @{ n = "Avg FPS"; e = { "{0:N1}" -f $_.AvgFps } }, @{ n = "1% low"; e = { "{0:N1}" -f $_.Low1 } }, @{ n = "Direct flip %"; e = { "{0:N0}" -f $_.DirectPct } }, @{ n = "To screen ms"; e = { "{0:N1}" -f $_.DisplayMs } }, Dir -AutoSize | Out-String -Width 200
 "Averages (drop vs baseline):"
 $runs | Group-Object Run | ForEach-Object {
     $a = ($_.Group | Measure-Object AvgFps -Average).Average
@@ -59,5 +73,7 @@ $runs | Group-Object Run | ForEach-Object {
         "Avg drop" = $(if ($_.Name -eq "baseline") { "-" } else { "{0:N1}%" -f ((1 - $a / $baseAvg) * 100) })
         "1% low" = "{0:N1}" -f $l
         "1% low drop" = $(if ($_.Name -eq "baseline") { "-" } else { "{0:N1}%" -f ((1 - $l / $baseLow) * 100) })
+        "Direct flip %" = "{0:N0}" -f ($_.Group | Measure-Object DirectPct -Average).Average
+        "To screen ms" = "{0:N1}" -f ($_.Group | Measure-Object DisplayMs -Average).Average
     }
 } | Format-Table -AutoSize | Out-String -Width 200

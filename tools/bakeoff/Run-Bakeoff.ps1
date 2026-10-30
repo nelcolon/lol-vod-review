@@ -52,6 +52,8 @@ param(
     [int]$Fps = 60,
     # recorder only: "light" = current defaults, "legacy" = v0.3.7 (full-frame health check every 1 s, normal priority)
     [ValidateSet("light", "legacy")][string]$Perf = "light",
+    # recorder only: capture the primary monitor (WGC) instead of the game window
+    [switch]$Monitor,
     [double]$BitrateMbps = 12,
     [int]$Cq = 23,
     [switch]$NoAudio,
@@ -181,7 +183,8 @@ switch ($Backend) {
     "none" { Note "baseline run, no capture" }
     "recorder" {
         $backendProc = Start-Redirected $recorder "" $recorderEvents $recorderErr $true
-        $targetJson = if ($WindowTitle) { @{ windowTitle = $WindowTitle } } else { @{ processName = $ProcessName } }
+        $primary = if ($Monitor) { ((& $recorder --list-monitors | ConvertFrom-Json).monitors | Where-Object primary | Select-Object -First 1).index } else { $null }
+        $targetJson = if ($Monitor) { @{ monitor = [int]$primary } } elseif ($WindowTitle) { @{ windowTitle = $WindowTitle } } else { @{ processName = $ProcessName } }
         $start = @{
             cmd = "start"; target = $targetJson; out = $videoPath; fps = $Fps; bitrateMbps = $BitrateMbps
             width = $null; height = $null; audio = @{ game = (-not $NoAudio); mic = $false }
@@ -216,16 +219,16 @@ switch ($Backend) {
         }
         # window_exe/window_title are ECMAScript regexes; colons are option separators in lavfi so none may appear in them.
         $src = "gfxcapture=${sel}:max_framerate=${Fps}:capture_cursor=${cursorFlag}:display_border=0:resize_mode=scale"
-        $args = "-f lavfi -i `"$src`" $ffmpegCommon `"$videoPath`""
-        Note "ffmpeg $args"
-        $backendProc = Start-Redirected $ffmpeg $args $ffOut $ffLog $true
+        $ffArgs = "-f lavfi -i `"$src`" $ffmpegCommon `"$videoPath`""
+        Note "ffmpeg $ffArgs"
+        $backendProc = Start-Redirected $ffmpeg $ffArgs $ffOut $ffLog $true
     }
     "ddagrab" {
         $cursorFlag = if ($Cursor) { 1 } else { 0 }
         $src = "ddagrab=output_idx=0:framerate=${Fps}:draw_mouse=${cursorFlag}"
-        $args = "-filter_complex `"$src`" $ffmpegCommon `"$videoPath`""
-        Note "ffmpeg $args"
-        $backendProc = Start-Redirected $ffmpeg $args $ffOut $ffLog $true
+        $ffArgs = "-filter_complex `"$src`" $ffmpegCommon `"$videoPath`""
+        Note "ffmpeg $ffArgs"
+        $backendProc = Start-Redirected $ffmpeg $ffArgs $ffOut $ffLog $true
     }
 }
 if ($Backend -eq "gfxcapture" -or $Backend -eq "ddagrab") {
