@@ -27,7 +27,7 @@ import type {
   Settings,
   Theme,
 } from '../shared/contracts';
-import { CAUSE_TAGS, queueName } from '../shared/contracts';
+import { CAUSE_TAGS, OPPONENT_ROLES, queueName } from '../shared/contracts';
 import type { Backend } from './backend';
 import { computePlayState, involvedIn, killsIn, type SavedPlayer } from './core/playstate';
 import type { DdragonData } from './core/ddragon';
@@ -489,7 +489,7 @@ export class MockBackend implements Backend {
         myChampion: spec.myChampion,
         myChampionKey: spec.myChampion.replace(/[^A-Za-z]/g, ''),
         myRole: spec.myRole,
-        opponent: { champion: MOCK_OPPONENT[spec.myRole] ?? 'Zed', championKey: MOCK_OPPONENT[spec.myRole] ?? 'Zed' },
+        opponents: (OPPONENT_ROLES[spec.myRole] ?? []).map((role) => ({ champion: MOCK_OPPONENT[role]!, championKey: MOCK_OPPONENT[role]!, role })),
         iconVersion: '15.20.1',
         durationS: spec.durationS,
         status: 'ready',

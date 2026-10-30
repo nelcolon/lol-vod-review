@@ -1594,3 +1594,28 @@ button.primary {
 .fs-volume {
   width: 140px;
 }
+.lib-vs {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.lib-vs .lib-champ.secondary > span:last-child {
+  color: var(--fg-muted);
+}
+.lib-plus {
+  font-size: 16px;
+}
+.lib-portrait {
+  position: relative;
+  display: inline-block;
+}
+.lib-role-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 16px;
+  height: 16px;
+  padding: 1px;
+  border-radius: 50%;
+  background: #0b0d11;
+}

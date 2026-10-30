@@ -77,7 +77,7 @@ export function mapGame(row: GameRow | GameListItem, kda: [number, number, numbe
     myChampion: row.my_champion ?? '',
     myChampionKey: '',
     myRole: row.my_role ?? '',
-    opponent: null,
+    opponents: [],
     iconVersion: null,
     durationS: row.duration_s ?? 0,
     status: mapStatus(row.status),

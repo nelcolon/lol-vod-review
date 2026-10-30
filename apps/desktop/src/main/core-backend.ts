@@ -38,7 +38,7 @@ import { kdaOf, mapClip, mapEvent, mapGame, mapMoment, mapNote, mapSegment, type
 import { computePlayState, involvedIn, killsIn, readPlayersLog, type LcuTimeline, type SavedPlayer } from './core/playstate';
 import { RecorderSidecar, type StoppedEvent } from './core/recorder';
 import type { CauseTag, Clip, ClipBundle, Game, GameBundle, Note, NoteInput, PlayState, RecorderStatus, Settings } from '../shared/contracts';
-import { BITRATE_PRESETS, CAUSE_TAGS } from '../shared/contracts';
+import { BITRATE_PRESETS, CAUSE_TAGS, OPPONENT_ROLES } from '../shared/contracts';
 
 export interface CoreBackendOptions {
   dbPath: string;
@@ -581,16 +581,19 @@ export class CoreBackend implements Backend {
   }
 
   /** Icons for the library: my champion, and the enemy in my position. */
-  private async lineup(row: { id: number; patch: string | null; my_champion: string | null }): Promise<Pick<Game, 'myChampionKey' | 'opponent' | 'iconVersion'>> {
+  private async lineup(row: { id: number; patch: string | null; my_champion: string | null }): Promise<Pick<Game, 'myChampionKey' | 'opponents' | 'iconVersion'>> {
     const dd = await this.ddragon.forPatch(row.patch);
     const key = (champion: string) => dd?.names[champion] ?? champion.replace(/[^A-Za-z]/g, '');
     const meName = this.store.getTimeline<{ name: string }>(row.id, 'lvr_me')?.data.name;
     const parts = this.store.listParticipants(row.id);
     const mine = parts.find((p) => p.riot_id_name === meName);
-    const opp = mine?.role && mine.role !== 'NONE' ? parts.find((p) => p.team !== mine.team && p.role === mine.role) : undefined;
+    const opponents = (mine?.role ? (OPPONENT_ROLES[mine.role] ?? []) : []).flatMap((role) => {
+      const p = parts.find((x) => x.team !== mine!.team && x.role === role && x.champion);
+      return p ? [{ champion: p.champion!, championKey: key(p.champion!), role }] : [];
+    });
     return {
       myChampionKey: row.my_champion ? key(row.my_champion) : '',
-      opponent: opp?.champion ? { champion: opp.champion, championKey: key(opp.champion) } : null,
+      opponents,
       iconVersion: dd?.version ?? null,
     };
   }

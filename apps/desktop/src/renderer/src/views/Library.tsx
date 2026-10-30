@@ -90,10 +90,18 @@ export function Library() {
                   </span>
                 </td>
                 <td>
-                  {g.opponent ? (
-                    <span className="lib-champ">
-                      <DdIcon v={g.iconVersion} kind="champion" id={g.opponent.championKey} label={g.opponent.champion} size={36} />
-                      <span>{g.opponent.champion}</span>
+                  {g.opponents.length > 0 ? (
+                    <span className="lib-vs">
+                      {g.opponents.map((o, i) => (
+                        <span key={o.role} className={`lib-champ ${i > 0 ? 'secondary' : ''}`} title={`${o.champion} (${roleLabel(o.role)})`}>
+                          {i > 0 && <span className="muted lib-plus">+</span>}
+                          <span className="lib-portrait">
+                            <DdIcon v={g.iconVersion} kind="champion" id={o.championKey} label={o.champion} size={i === 0 ? 36 : 30} />
+                            {ROLE_ICON[o.role] && <img className="lib-role-badge" src={ROLE_ICON[o.role]} alt={roleLabel(o.role)} />}
+                          </span>
+                          <span>{o.champion}</span>
+                        </span>
+                      ))}
                     </span>
                   ) : (
                     <span className="muted">—</span>

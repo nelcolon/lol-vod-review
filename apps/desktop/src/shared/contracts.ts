@@ -16,6 +16,15 @@ export type GameResult = 'win' | 'loss' | 'remake' | 'unknown';
 export type GameStatus = 'recording' | 'post_processing' | 'ready' | 'failed';
 export type ReviewStatus = 'unreviewed' | 'in_progress' | 'reviewed';
 
+/** Enemy positions shown against each of mine: lane opponent first. */
+export const OPPONENT_ROLES: Record<string, string[]> = {
+  TOP: ['TOP', 'JUNGLE'],
+  JUNGLE: ['JUNGLE', 'MIDDLE'],
+  MIDDLE: ['MIDDLE', 'JUNGLE'],
+  BOTTOM: ['BOTTOM', 'UTILITY'],
+  UTILITY: ['UTILITY', 'BOTTOM'],
+};
+
 export interface Game {
   id: string;
   /** Riot gameId (numeric, stringified to avoid 64-bit issues). */
@@ -34,8 +43,11 @@ export interface Game {
   /** Data Dragon champion id for the icon ('' when unknown). */
   myChampionKey: string;
   myRole: string;
-  /** The enemy in the same position, when known. */
-  opponent: { champion: string; championKey: string } | null;
+  /**
+   * Enemies that matter for my position: the lane opponent first, then their support (bot),
+   * their ADC (support), their jungler (top/mid) or their mid (jungle). Empty when unknown.
+   */
+  opponents: Array<{ champion: string; championKey: string; role: string }>;
   /** Data Dragon version for champion icons; null offline. */
   iconVersion: string | null;
   durationS: number;
