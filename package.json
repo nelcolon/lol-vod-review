@@ -11,6 +11,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "dev": "npm run build -w packages/schema -w packages/core && npm run dev -w apps/desktop",
     "dist": "npm run build -w packages/schema -w packages/core && cargo build --release --manifest-path packages/recorder/Cargo.toml && npm run dist -w apps/desktop",
+    "release": "node tools/release.mjs",
     "event-dump": "npm run start -w tools/event-dump --"
   },
   "engines": { "node": ">=22" },

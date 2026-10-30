@@ -8,7 +8,7 @@ files:
   - out/**
   - package.json
 extraResources:
-  # LGPL FFmpeg sidecar (BtbN win64-lgpl). Never bundle libobs (GPL).
+  # LGPL FFmpeg sidecar (BtbN win64-lgpl, fetched by tools/fetch-ffmpeg.ps1). Never bundle GPL builds or libobs.
   - from: ../../tools/bin/ffmpeg.exe
     to: ffmpeg.exe
   # Recorder sidecar (packages/recorder, `cargo build --release` first).
