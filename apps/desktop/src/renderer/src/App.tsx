@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { StatusBar } from './components/StatusBar';
-import { UpdateBanner } from './components/UpdateBanner';
+import { UpdateDialog } from './components/UpdateDialog';
 import { useStore } from './store';
 import { GameView } from './views/GameView';
 import { Library } from './views/Library';
@@ -43,13 +43,13 @@ export function App() {
         <div className="spacer" />
         <span className="brand">LoL VOD Review</span>
       </header>
-      <UpdateBanner />
       <main className="content">
         {route.view === 'library' && <Library />}
         {route.view === 'game' && <GameView key={route.gameId} />}
         {route.view === 'settings' && <SettingsView />}
       </main>
       <StatusBar />
+      <UpdateDialog />
       {toast && (
         <div className={`toast ${toast.kind}`} role="status">
           <span>{toast.text}</span>

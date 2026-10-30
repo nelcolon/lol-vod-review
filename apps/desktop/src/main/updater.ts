@@ -18,7 +18,8 @@ export class Updater {
 
   start(): void {
     if (!app.isPackaged) {
-      this.status = { ...this.status, state: 'dev' };
+      // LVR_FAKE_UPDATE=1 previews the update dialog in a dev build
+      this.status = process.env['LVR_FAKE_UPDATE'] ? { ...this.status, state: 'available', latest: '9.9.9' } : { ...this.status, state: 'dev' };
       return;
     }
     autoUpdater.autoDownload = false;

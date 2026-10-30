@@ -1674,15 +1674,59 @@ table.games tbody tr.res-loss td:first-child {
     transform: scale(1.35);
   }
 }
-/* update banner */
-.update-banner {
+/* update dialog */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: rgba(59, 130, 246, 0.16);
-  border-bottom: 1px solid rgba(59, 130, 246, 0.45);
-  font-size: 13px;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  animation: fade-in 0.15s ease-out;
+}
+.update-dialog {
+  position: relative;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  padding: 20px 22px 16px;
+  border: 1px solid var(--border, #2a2f3a);
+  border-radius: 10px;
+  background: var(--bg-1, #161a21);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+.update-dialog h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.update-dialog p {
+  margin: 6px 0;
+}
+.update-dialog .update-progress {
+  width: 100%;
+  margin-top: 10px;
+}
+.update-x {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 8px;
+  border: none;
+  background: none;
+  color: var(--fg-muted, #8b93a1);
+  font-size: 20px;
+  cursor: pointer;
+}
+.update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 }
 .update-progress {
   width: 180px;

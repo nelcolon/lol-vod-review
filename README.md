@@ -15,8 +15,9 @@ Get the latest installer from **[Releases](https://github.com/nelcolon/lol-vod-r
 - It installs for your Windows user only, so no admin rights are needed.
 - The installer is not code-signed yet. If Windows SmartScreen warns, click **More info** →
   **Run anyway**.
-- The app updates itself: when a new version is out it shows "This is an outdated version" with
-  an **Update now** button (also in Settings → About & updates). It never installs during a game.
+- The app updates itself: when a new version is out a small window offers **Update** (download,
+  then **Restart now**) or **Close** to ignore it until the next start. Settings → About & updates
+  has the same buttons. It never installs during a game.
 
 **Requirements:** Windows 10 (version 1903 or later) or Windows 11, 64-bit, and a GPU with a
 hardware H.264 encoder (any recent NVIDIA, AMD or Intel). Windows "N" editions need the Media
