@@ -13,6 +13,8 @@ export interface StartedEvent {
   fps: number;
   path: string;
   hwnd?: number;
+  /** `dxgi` (desktop duplication) or `wgc`; absent from recorders before 0.3.8. */
+  captureMethod?: 'dxgi' | 'wgc';
 }
 export interface StoppedEvent {
   ev: 'stopped';
@@ -51,6 +53,8 @@ export interface StartOptions {
   mic?: boolean;
   /** Mic gain in percent. */
   micVolume?: number;
+  /** `auto` = DXGI desktop duplication, falling back to WGC. */
+  capture?: 'auto' | 'wgc';
 }
 
 export interface RecorderHandlers {
@@ -169,7 +173,7 @@ export class RecorderSidecar {
   async start(o: StartOptions): Promise<StartedEvent> {
     // `started` comes with the first frame; a static loading screen can take a moment.
     const ev = await this.send(
-      { cmd: 'start', target: o.target, out: o.out, fps: o.fps, bitrateMbps: o.bitrateMbps, audio: { game: true, mic: o.mic ?? false, micVolume: o.micVolume ?? 100 } },
+      { cmd: 'start', target: o.target, out: o.out, fps: o.fps, bitrateMbps: o.bitrateMbps, audio: { game: true, mic: o.mic ?? false, micVolume: o.micVolume ?? 100 }, capture: o.capture ?? 'auto' },
       'start',
       15_000,
     );

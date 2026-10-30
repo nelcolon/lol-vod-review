@@ -296,7 +296,9 @@ export class CoreBackend implements Backend {
         bitrateMbps: preset.mbps,
         mic: this.settings?.recordMic ?? true,
         micVolume: this.settings?.micVolume ?? 100,
+        capture: this.settings?.compatCapture ? 'wgc' : 'auto',
       });
+      console.log(`[recorder] capturing with ${started.captureMethod ?? 'wgc'} at ${started.width}x${started.height}`);
       if (this.live !== g || this.runner.state !== 'RECORDING') {
         // The game ended while the recorder was starting: drop this segment.
         console.warn('[recorder] started after the game ended, stopping');

@@ -52,8 +52,10 @@ param(
     [int]$Fps = 60,
     # recorder only: "light" = current defaults, "legacy" = v0.3.7 (full-frame health check every 1 s, normal priority)
     [ValidateSet("light", "legacy")][string]$Perf = "light",
-    # recorder only: capture the primary monitor (WGC) instead of the game window
+    # recorder only: capture the primary monitor instead of the game window
     [switch]$Monitor,
+    # recorder only: auto = DXGI desktop duplication with WGC fallback (the app's default)
+    [ValidateSet("auto", "dxgi", "wgc")][string]$Capture = "auto",
     [double]$BitrateMbps = 12,
     [int]$Cq = 23,
     [switch]$NoAudio,
@@ -190,6 +192,7 @@ switch ($Backend) {
             width = $null; height = $null; audio = @{ game = (-not $NoAudio); mic = $false }
             cursor = [bool]$Cursor; border = $false
             perf = if ($Perf -eq "legacy") { @{ healthEveryS = 1; healthCrop = $false; lowPriority = $false } } else { @{} }
+            capture = $Capture
         } | ConvertTo-Json -Compress -Depth 4
         $backendProc.StandardInput.WriteLine($start)
         $backendProc.StandardInput.Flush()

@@ -71,6 +71,15 @@ export function SettingsView() {
           </span>
           <span className="muted small">100% is your mic as Windows hears it; raise it if your voice is quiet next to the game.</span>
         </label>
+        <label className="row compact">
+          <input type="checkbox" checked={settings.compatCapture} onChange={(e) => void update({ compatCapture: e.target.checked })} />
+          Compatibility capture
+          <span className="muted small">
+            Off (recommended): the screen is copied without slowing the game down, and when you alt-tab out of League the video shows a
+            "not in focus" card instead of your other windows. Turn on only if recordings come out black or broken; it records the game window
+            directly but costs some smoothness in game. Applies from the next game.
+          </span>
+        </label>
       </fieldset>
 
       <fieldset>

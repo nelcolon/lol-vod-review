@@ -49,7 +49,10 @@ Feature Pack.
 Nothing touches the game process. The app never injects into, hooks or reads the memory of
 League, never sends input, and installs no drivers, so it is compatible with Vanguard.
 
-- **Video:** Windows Graphics Capture with the hardware encoder.
+- **Video:** DXGI Desktop Duplication (the screen copy Windows provides for recording apps) with the
+  hardware encoder, so the game keeps its fast path to the screen; Windows Graphics Capture is the
+  fallback. When League is not the window in front (you alt-tab to Discord or a browser), the
+  recording shows a "not in focus" card instead of your screen.
 - **Events:** Riot's local Live Client Data API (`127.0.0.1:2999`), which is read-only.
 - **After the game:** the League Client's match history (read-only).
 - **Coaching:** all analysis is shown after the game, per Riot policy. There is no in-game
@@ -80,7 +83,7 @@ installer as a downloadable artifact without publishing anything.
 ```
 apps/desktop/        Electron + React + TypeScript (main, preload, renderer)
 packages/core/       lifecycle state machine, LCU client, Live Client poller, moments engine, SQLite store
-packages/recorder/   Rust sidecar: WGC capture -> Media Foundation H.264/AAC, JSON lines over stdio
+packages/recorder/   Rust sidecar: DXGI duplication (or WGC) -> Media Foundation H.264/AAC, JSON lines over stdio
 packages/schema/     zod types for 2999 / LCU payloads + fixtures from real captures
 tools/               event-dump, recorder bake-off, PresentMon harness, FFmpeg fetch, release script
 docs/                PLAN.md, ADRs, research
@@ -106,6 +109,11 @@ npm run typecheck
 npm run smoke -w apps/desktop   # end-to-end smoke test of the built app
 npm run dist                    # local installer -> apps/desktop/release/
 ```
+
+**Measuring the FPS cost:** with League open (Practice Tool works), run
+`powershell -ExecutionPolicy Bypass -File tools\bakeoff\Run-PerfAB.ps1 -Seconds 45 -Rounds 3`. It asks
+for admin once (PresentMon) and compares the game's average FPS, 1 % lows and present-to-display time
+with no recording, with the recorder on WGC and with the recorder on DXGI duplication.
 
 **Measuring resource use:** `powershell -ExecutionPolicy Bypass -File tools\measure-resources.ps1 -Seconds 120`
 samples CPU, RAM, GPU (3D and video encoder) and disk writes per app: LoL VOD Review, Insights

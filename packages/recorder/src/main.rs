@@ -4,13 +4,14 @@
 //! README). `--self-test` records the primary monitor (or a window) for a few
 //! seconds and prints a verdict, for the Phase 0 bake-off.
 //!
-//! Vanguard rules (PLAN.md §2.1): this binary only uses WGC with a window
-//! handle or monitor, never opens the game process beyond
+//! Vanguard rules (PLAN.md §2.1): this binary only uses DXGI Desktop
+//! Duplication or WGC with a window handle or monitor, never opens the game process beyond
 //! PROCESS_QUERY_LIMITED_INFORMATION, and never sends input or messages.
 
 mod audio;
 mod capture;
 mod detect;
+mod dup;
 mod emit;
 mod hwenc;
 mod protocol;
@@ -59,6 +60,7 @@ self-test options:
   --mic              mix the default microphone into the audio
   --mic-volume PCT   mic gain in percent, 0-400 (default 100)
   --legacy-perf      v0.3.7 behaviour: full-frame health check every 1 s, normal priority
+  --capture M        auto (DXGI, falling back to WGC; default), dxgi or wgc
   --cursor           include the cursor
   --border           keep the yellow WGC border
 "
@@ -282,6 +284,11 @@ fn self_test(args: &[String], emitter: Emitter) -> i32 {
             protocol::PerfParams { health_every_s: 1.0, health_crop: false, low_priority: false }
         } else {
             protocol::PerfParams::default()
+        },
+        capture: match arg_value(args, "--capture").as_deref() {
+            Some("wgc") => protocol::CaptureMethod::Wgc,
+            Some("dxgi") => protocol::CaptureMethod::Dxgi,
+            _ => protocol::CaptureMethod::Auto,
         },
     };
 

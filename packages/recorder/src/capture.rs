@@ -1,6 +1,7 @@
-//! One recording session: WGC capture of a window or monitor via
-//! `windows-capture`, Media Foundation H.264/HEVC encoding, optional system
-//! loopback audio, health detection, and the start/stats/stop lifecycle.
+//! One recording session: DXGI Desktop Duplication (`dup.rs`) or WGC capture of
+//! a window or monitor via `windows-capture`, Media Foundation H.264/HEVC
+//! encoding, optional system loopback audio, health detection, and the
+//! start/stats/stop lifecycle.
 
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU32, AtomicU64, Ordering};
@@ -25,7 +26,8 @@ use crate::audio::{self, AudioFormat, AudioHandle, AudioShared};
 use crate::detect::{luma_grid, DetectorConfig, FrameHealth, Health, GRID_H, GRID_W};
 use crate::emit::Emitter;
 use crate::hwenc;
-use crate::protocol::{Codec, Event, StartParams, Target, WarningCode};
+use crate::dup::{self, DupHandle, DupTarget};
+use crate::protocol::{CaptureMethod, Codec, Event, StartParams, Target, WarningCode};
 use crate::qpc;
 use crate::winenum;
 
@@ -66,7 +68,8 @@ pub struct EncoderCfg {
     pub health_crop: bool,
 }
 
-/// Everything the crate hands to `Handler::new` on the capture thread.
+/// Everything the crate hands to `Handler::new` on the capture thread (and `dup` gets too).
+#[derive(Clone)]
 pub struct HandlerFlags {
     pub cfg: EncoderCfg,
     pub slot: Arc<Mutex<Option<VideoEncoder>>>,
@@ -85,9 +88,9 @@ pub struct Handler {
     last_warned_size: Option<(u32, u32)>,
 }
 
-impl Handler {
-    fn t_secs(&self, hns: i64) -> f64 {
-        let first = self.f.shared.first_frame_hns.load(Ordering::Relaxed);
+impl HandlerFlags {
+    pub fn t_secs(&self, hns: i64) -> f64 {
+        let first = self.shared.first_frame_hns.load(Ordering::Relaxed);
         if first == 0 {
             0.0
         } else {
@@ -95,22 +98,22 @@ impl Handler {
         }
     }
 
-    fn warn(&self, code: WarningCode, detail: Option<String>, hns: i64) {
-        self.f.emitter.emit(&Event::Warning {
+    pub fn warn(&self, code: WarningCode, detail: Option<String>, hns: i64) {
+        self.emitter.emit(&Event::Warning {
             code,
             detail,
             t: self.t_secs(hns),
         });
     }
 
-    fn open_encoder(&mut self, frame: &Frame, ts: i64) -> Result<(), BoxErr> {
+    /// Open the encoder for a `src_w`x`src_h` source whose first frame is at `ts`; returns
+    /// the locked output size.
+    pub fn open_encoder(&self, src_w: u32, src_h: u32, ts: i64) -> Result<(u32, u32), BoxErr> {
         // Measure before the (slow, ~0.5 s) encoder setup.
-        let now = qpc::now_100ns(self.f.qpc_freq);
-        let src_w = frame.width();
-        let src_h = frame.height();
-        let w = self.f.cfg.width.unwrap_or(src_w).max(2) & !1;
-        let h = self.f.cfg.height.unwrap_or(src_h).max(2) & !1;
-        if (w, h) != (src_w, src_h) && (self.f.cfg.width.is_some() || self.f.cfg.height.is_some()) {
+        let now = qpc::now_100ns(self.qpc_freq);
+        let w = self.cfg.width.unwrap_or(src_w).max(2) & !1;
+        let h = self.cfg.height.unwrap_or(src_h).max(2) & !1;
+        if (w, h) != (src_w, src_h) && (self.cfg.width.is_some() || self.cfg.height.is_some()) {
             self.warn(
                 WarningCode::ScaleUnavailable,
                 Some(format!(
@@ -119,15 +122,15 @@ impl Handler {
                 ts,
             );
         }
-        let sub_type = match self.f.cfg.codec {
+        let sub_type = match self.cfg.codec {
             Codec::H264 => VideoSettingsSubType::H264,
             Codec::Hevc => VideoSettingsSubType::HEVC,
         };
         let video = VideoSettingsBuilder::new(w, h)
             .sub_type(sub_type)
-            .bitrate(self.f.cfg.bitrate_bps)
-            .frame_rate(self.f.cfg.fps);
-        let audio = match self.f.cfg.audio {
+            .bitrate(self.cfg.bitrate_bps)
+            .frame_rate(self.cfg.fps);
+        let audio = match self.cfg.audio {
             Some(fmt) => AudioSettingsBuilder::new()
                 .sample_rate(fmt.sample_rate)
                 .channel_count(fmt.channels as u32)
@@ -135,20 +138,43 @@ impl Handler {
                 .bitrate(192_000),
             None => AudioSettingsBuilder::new().disabled(true),
         };
-        let encoder = VideoEncoder::new(video, audio, ContainerSettingsBuilder::new(), &self.f.cfg.path)?;
-        *self.f.slot.lock() = Some(encoder);
-        self.locked = Some((w, h));
-        self.f.shared.width.store(w, Ordering::Relaxed);
-        self.f.shared.height.store(h, Ordering::Relaxed);
-        self.f.shared.first_frame_latency_hns.store(now - ts, Ordering::Relaxed);
+        let encoder = VideoEncoder::new(video, audio, ContainerSettingsBuilder::new(), &self.cfg.path)?;
+        *self.slot.lock() = Some(encoder);
+        self.shared.width.store(w, Ordering::Relaxed);
+        self.shared.height.store(h, Ordering::Relaxed);
+        self.shared.first_frame_latency_hns.store(now - ts, Ordering::Relaxed);
         // Publish first-frame time last: the audio thread starts delivering
         // as soon as it sees a non-zero value and needs the encoder in place.
-        self.f.shared.first_frame_hns.store(ts, Ordering::Release);
-        self.f.shared.encoder_ready.store(true, Ordering::Release);
-        self.last_sample_hns = ts;
-        Ok(())
+        self.shared.first_frame_hns.store(ts, Ordering::Release);
+        self.shared.encoder_ready.store(true, Ordering::Release);
+        Ok((w, h))
     }
 
+    /// Count a frame handed to the encoder at `ts` (`interval_hns` = one target frame).
+    pub fn count_frame(&self, ts: i64, interval_hns: i64) {
+        self.shared.frames.fetch_add(1, Ordering::Relaxed);
+        let prev = self.shared.last_frame_hns.swap(ts, Ordering::Relaxed);
+        if prev != 0 && ts - prev > 2 * interval_hns {
+            self.shared.gaps.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Feed a luma grid to the black/frozen detector and emit what changed.
+    pub fn report_health(&self, health: &mut FrameHealth, grid: &[u8], ts: i64) {
+        let t = self.t_secs(ts);
+        for ev in health.observe(grid, t) {
+            let code = match ev {
+                Health::BlackStarted => WarningCode::BlackFrames,
+                Health::BlackCleared => WarningCode::BlackFramesCleared,
+                Health::FrozenStarted => WarningCode::FrozenFrames,
+                Health::FrozenCleared => WarningCode::FrozenFramesCleared,
+            };
+            self.warn(code, None, ts);
+        }
+    }
+}
+
+impl Handler {
     fn sample_health(&mut self, frame: &mut Frame, ts: i64) {
         // A readback stalls on the GPU copy; a centre crop (a ninth of the frame, at most
         // 640x360) is plenty to tell a black or frozen picture and costs a fraction of it.
@@ -167,16 +193,7 @@ impl Handler {
         let (w, h) = (buf.width(), buf.height());
         let grid = luma_grid(buf.as_raw_buffer(), w, h, pitch, GRID_W, GRID_H);
         drop(buf);
-        let t = self.t_secs(ts);
-        for ev in self.health.observe(&grid, t) {
-            let code = match ev {
-                Health::BlackStarted => WarningCode::BlackFrames,
-                Health::BlackCleared => WarningCode::BlackFramesCleared,
-                Health::FrozenStarted => WarningCode::FrozenFrames,
-                Health::FrozenCleared => WarningCode::FrozenFramesCleared,
-            };
-            self.warn(code, None, ts);
-        }
+        self.f.report_health(&mut self.health, &grid, ts);
     }
 }
 
@@ -201,7 +218,8 @@ impl GraphicsCaptureApiHandler for Handler {
         let ts = frame.timestamp()?.Duration;
         if self.locked.is_none() {
             // Lock the output size to the first frame (or the requested size).
-            self.open_encoder(frame, ts)?;
+            self.locked = Some(self.f.open_encoder(frame.width(), frame.height(), ts)?);
+            self.last_sample_hns = ts;
         }
 
         // Cap the delivery rate at the target fps (WGC can deliver faster on
@@ -217,18 +235,14 @@ impl GraphicsCaptureApiHandler for Handler {
                 enc.send_frame(frame)?;
             }
         }
-        self.f.shared.frames.fetch_add(1, Ordering::Relaxed);
-        let prev = self.f.shared.last_frame_hns.swap(ts, Ordering::Relaxed);
-        if prev != 0 && ts - prev > 2 * self.interval_hns {
-            self.f.shared.gaps.fetch_add(1, Ordering::Relaxed);
-        }
+        self.f.count_frame(ts, self.interval_hns);
         self.next_accept_hns = ts + self.interval_hns * 3 / 4;
 
         let cur = (frame.width(), frame.height());
         if Some(cur) != self.locked && self.last_warned_size != Some(cur) {
             self.last_warned_size = Some(cur);
             let (lw, lh) = self.locked.unwrap_or(cur);
-            self.warn(
+            self.f.warn(
                 WarningCode::SizeChanged,
                 Some(format!("source now {}x{}, output stays {lw}x{lh} (crop/pad)", cur.0, cur.1)),
                 ts,
@@ -249,8 +263,30 @@ impl GraphicsCaptureApiHandler for Handler {
     }
 }
 
+enum Backend {
+    Wgc(CaptureControl<Handler, BoxErr>),
+    Dup(DupHandle),
+}
+
+impl Backend {
+    fn is_finished(&self) -> bool {
+        match self {
+            Backend::Wgc(c) => c.is_finished(),
+            Backend::Dup(d) => d.is_finished(),
+        }
+    }
+
+    fn stop(self) -> Result<(), String> {
+        match self {
+            Backend::Wgc(c) => c.stop().map_err(|e| format!("{e:?}")),
+            Backend::Dup(d) => d.stop(),
+        }
+    }
+}
+
 pub struct Session {
-    control: Option<CaptureControl<Handler, BoxErr>>,
+    control: Option<Backend>,
+    capture_method: &'static str,
     slot: Arc<Mutex<Option<VideoEncoder>>>,
     shared: Arc<Shared>,
     audio: Option<AudioHandle>,
@@ -307,6 +343,99 @@ fn resolve_target(target: &Target) -> Result<Item, StartError> {
             winenum::monitor_by_index(*monitor).map_err(|e| start_err("target_not_found", e))?,
         )),
     }
+}
+
+fn stop_audio(stop: &AtomicBool, mic: &mut Option<AudioHandle>, audio: &mut Option<AudioHandle>) {
+    stop.store(true, Ordering::SeqCst);
+    if let Some(m) = mic.take() {
+        m.stop();
+    }
+    if let Some(a) = audio.take() {
+        a.stop();
+    }
+}
+
+fn start_wgc(
+    item: Item,
+    params: &StartParams,
+    flags: HandlerFlags,
+    emitter: &Emitter,
+) -> Result<CaptureControl<Handler, BoxErr>, String> {
+    let now_t = 0.0;
+    // Capture settings.
+    let cursor = match GraphicsCaptureApi::is_cursor_settings_supported() {
+        Ok(true) => {
+            if params.cursor {
+                CursorCaptureSettings::WithCursor
+            } else {
+                CursorCaptureSettings::WithoutCursor
+            }
+        }
+        _ => {
+            if !params.cursor {
+                emitter.emit(&Event::Warning {
+                    code: WarningCode::CursorSettingUnsupported,
+                    detail: None,
+                    t: now_t,
+                });
+            }
+            CursorCaptureSettings::Default
+        }
+    };
+    let border = match GraphicsCaptureApi::is_border_settings_supported() {
+        Ok(true) => {
+            if params.border {
+                DrawBorderSettings::WithBorder
+            } else {
+                DrawBorderSettings::WithoutBorder
+            }
+        }
+        _ => {
+            if !params.border {
+                emitter.emit(&Event::Warning {
+                    code: WarningCode::BorderSettingUnsupported,
+                    detail: Some("IsBorderRequired needs Windows 11 (build 20348+); the yellow border stays".into()),
+                    t: now_t,
+                });
+            }
+            DrawBorderSettings::Default
+        }
+    };
+    let min_interval = match GraphicsCaptureApi::is_minimum_update_interval_supported() {
+        Ok(true) => MinimumUpdateIntervalSettings::Custom(Duration::from_nanos(1_000_000_000 / params.fps as u64)),
+        _ => {
+            emitter.emit(&Event::Warning {
+                code: WarningCode::MinUpdateIntervalUnsupported,
+                detail: Some("capping at target fps in software instead".into()),
+                t: now_t,
+            });
+            MinimumUpdateIntervalSettings::Default
+        }
+    };
+
+    let control_result = match item {
+        Item::Window(window, _) => Handler::start_free_threaded(Settings::new(
+            window,
+            cursor,
+            border,
+            SecondaryWindowSettings::Default,
+            min_interval,
+            DirtyRegionSettings::Default,
+            ColorFormat::Bgra8,
+            flags,
+        )),
+        Item::Monitor(monitor) => Handler::start_free_threaded(Settings::new(
+            monitor,
+            cursor,
+            border,
+            SecondaryWindowSettings::Default,
+            min_interval,
+            DirtyRegionSettings::Default,
+            ColorFormat::Bgra8,
+            flags,
+        )),
+    };
+    control_result.map_err(|e| format!("{e:?}"))
 }
 
 impl Session {
@@ -384,57 +513,6 @@ impl Session {
             });
         }
 
-        // Capture settings.
-        let cursor = match GraphicsCaptureApi::is_cursor_settings_supported() {
-            Ok(true) => {
-                if params.cursor {
-                    CursorCaptureSettings::WithCursor
-                } else {
-                    CursorCaptureSettings::WithoutCursor
-                }
-            }
-            _ => {
-                if !params.cursor {
-                    emitter.emit(&Event::Warning {
-                        code: WarningCode::CursorSettingUnsupported,
-                        detail: None,
-                        t: now_t,
-                    });
-                }
-                CursorCaptureSettings::Default
-            }
-        };
-        let border = match GraphicsCaptureApi::is_border_settings_supported() {
-            Ok(true) => {
-                if params.border {
-                    DrawBorderSettings::WithBorder
-                } else {
-                    DrawBorderSettings::WithoutBorder
-                }
-            }
-            _ => {
-                if !params.border {
-                    emitter.emit(&Event::Warning {
-                        code: WarningCode::BorderSettingUnsupported,
-                        detail: Some("IsBorderRequired needs Windows 11 (build 20348+); the yellow border stays".into()),
-                        t: now_t,
-                    });
-                }
-                DrawBorderSettings::Default
-            }
-        };
-        let min_interval = match GraphicsCaptureApi::is_minimum_update_interval_supported() {
-            Ok(true) => MinimumUpdateIntervalSettings::Custom(Duration::from_nanos(1_000_000_000 / params.fps as u64)),
-            _ => {
-                emitter.emit(&Event::Warning {
-                    code: WarningCode::MinUpdateIntervalUnsupported,
-                    detail: Some("capping at target fps in software instead".into()),
-                    t: now_t,
-                });
-                MinimumUpdateIntervalSettings::Default
-            }
-        };
-
         let flags = HandlerFlags {
             cfg: EncoderCfg {
                 path: params.out.clone(),
@@ -453,44 +531,40 @@ impl Session {
             qpc_freq,
         };
 
-        let control_result = match item {
-            Item::Window(window, _) => Handler::start_free_threaded(Settings::new(
-                window,
-                cursor,
-                border,
-                SecondaryWindowSettings::Default,
-                min_interval,
-                DirtyRegionSettings::Default,
-                ColorFormat::Bgra8,
-                flags,
-            )),
-            Item::Monitor(monitor) => Handler::start_free_threaded(Settings::new(
-                monitor,
-                cursor,
-                border,
-                SecondaryWindowSettings::Default,
-                min_interval,
-                DirtyRegionSettings::Default,
-                ColorFormat::Bgra8,
-                flags,
-            )),
-        };
-        let control = match control_result {
-            Ok(c) => c,
-            Err(e) => {
-                audio_stop.store(true, Ordering::SeqCst);
-                if let Some(m) = mic.take() {
-                    m.stop();
+        let mut backend = None;
+        if params.capture != CaptureMethod::Wgc {
+            let target = match &item {
+                Item::Window(_, h) => DupTarget::Window(*h),
+                Item::Monitor(m) => DupTarget::Monitor(m.as_raw_hmonitor() as usize),
+            };
+            match dup::start(flags.clone(), target) {
+                Ok(d) => backend = Some(Backend::Dup(d)),
+                Err(e) if params.capture == CaptureMethod::Dxgi => {
+                    stop_audio(&audio_stop, &mut mic, &mut audio);
+                    return Err(start_err("capture_start_failed", format!("DXGI desktop duplication: {e}")));
                 }
-                if let Some(a) = audio.take() {
-                    a.stop();
-                }
-                return Err(start_err("capture_start_failed", format!("{e:?}")));
+                Err(e) => emitter.emit(&Event::Warning {
+                    code: WarningCode::CaptureFallback,
+                    detail: Some(format!("DXGI desktop duplication unavailable ({e}); using Windows Graphics Capture")),
+                    t: now_t,
+                }),
             }
+        }
+        let capture_method = if backend.is_some() { "dxgi" } else { "wgc" };
+        let control = match backend {
+            Some(b) => b,
+            None => match start_wgc(item, &params, flags, &emitter) {
+                Ok(c) => Backend::Wgc(c),
+                Err(e) => {
+                    stop_audio(&audio_stop, &mut mic, &mut audio);
+                    return Err(start_err("capture_start_failed", e));
+                }
+            },
         };
 
         Ok(Session {
             control: Some(control),
+            capture_method,
             slot,
             shared,
             audio,
@@ -566,6 +640,7 @@ impl Session {
                 fps: self.params.fps,
                 audio: self.audio.is_some(),
                 audio_mode: self.audio.as_ref().map(|a| if self.mic.is_some() { format!("{}+mic", a.mode) } else { a.mode.to_string() }),
+                capture_method: self.capture_method.into(),
                 path: self.params.out.clone(),
                 hwnd: self.hwnd,
             });
@@ -627,14 +702,15 @@ impl Session {
         if let Some(a) = self.audio.take() {
             a.stop();
         }
-        // 2. Stop WGC and join the capture thread.
+        // 2. Stop the capture and join its thread.
         let mut detail = String::new();
         if let Some(c) = self.control.take() {
             if let Err(e) = c.stop() {
-                detail = format!(": {e:?}");
+                detail = format!(": {e}");
             }
         }
         // 3. Finalize the MP4 (writes moov).
+        crate::dup::trace("finalize");
         let encoder = self.slot.lock().take();
         let frames = self.frames();
         let dropped = self.dropped();

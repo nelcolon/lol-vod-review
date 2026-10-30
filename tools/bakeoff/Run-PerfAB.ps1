@@ -13,7 +13,8 @@
   powershell -ExecutionPolicy Bypass -File tools\bakeoff\Run-PerfAB.ps1 -Seconds 45
 #>
 param([int]$Seconds = 45, [int]$Rounds = 2, [string]$Label = "perf-ab",
-    # "recorders" = baseline / legacy / light; "methods" = baseline / WGC window / WGC monitor / DXGI duplication (ffmpeg ddagrab)
+    # "recorders" = baseline / our recorder with WGC / our recorder with DXGI duplication (the default)
+    # "methods"   = baseline / WGC window / WGC monitor / DXGI duplication through ffmpeg ddagrab
     [ValidateSet("recorders", "methods")][string]$Compare = "recorders")
 $ErrorActionPreference = "Stop"
 
@@ -35,9 +36,9 @@ if ($others) { Write-Warning ("Still running, results will be skewed: " + (($oth
 $runs = @()
 for ($r = 1; $r -le $Rounds; $r++) {
     $variants = if ($Compare -eq "methods") {
-        @(@{ n = "baseline"; b = "none" }, @{ n = "wgc-window"; b = "recorder" }, @{ n = "wgc-monitor"; b = "recorder"; m = $true }, @{ n = "dxgi-dup"; b = "ddagrab" })
+        @(@{ n = "baseline"; b = "none" }, @{ n = "wgc-window"; b = "recorder"; c = "wgc" }, @{ n = "wgc-monitor"; b = "recorder"; c = "wgc"; m = $true }, @{ n = "dxgi-dup"; b = "ddagrab" })
     } else {
-        @(@{ n = "baseline"; b = "none" }, @{ n = "recorder-legacy"; b = "recorder"; p = "legacy" }, @{ n = "recorder-light"; b = "recorder" })
+        @(@{ n = "baseline"; b = "none" }, @{ n = "recorder-wgc"; b = "recorder"; c = "wgc" }, @{ n = "recorder-dxgi"; b = "recorder"; c = "dxgi" })
     }
     foreach ($v in $variants) {
         $name = $v.n
@@ -45,6 +46,7 @@ for ($r = 1; $r -le $Rounds; $r++) {
         $extra = @{}
         if ($v.p) { $extra.Perf = $v.p }
         if ($v.m) { $extra.Monitor = $true }
+        if ($v.c) { $extra.Capture = $v.c }
         & (Join-Path $here "Run-Bakeoff.ps1") -Backend $v.b -Seconds $Seconds -Label "$Label-$name" -NoNvidiaSmi @extra | Out-Null
         $dir = Get-ChildItem (Join-Path $here "results") -Directory | Sort-Object LastWriteTime | Select-Object -Last 1
         $sum = Get-Content (Join-Path $dir.FullName "summary.json") -Raw | ConvertFrom-Json

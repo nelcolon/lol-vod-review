@@ -47,6 +47,25 @@ pub struct StartParams {
     /// Knobs that trade recorder work for game performance (defaults are the light ones).
     #[serde(default)]
     pub perf: PerfParams,
+    #[serde(default)]
+    pub capture: CaptureMethod,
+}
+
+/// How frames are grabbed.
+///
+/// WGC window/monitor capture makes DWM compose the game (it loses independent flip, about
+/// 10 ms more present-to-display latency and worse 1% lows). DXGI Desktop Duplication copies
+/// the composed screen and leaves the game's flip path alone, so it is the default; it falls
+/// back to WGC when duplication cannot start.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum CaptureMethod {
+    /// DXGI, falling back to WGC.
+    #[default]
+    Auto,
+    Wgc,
+    /// DXGI only: fail instead of falling back.
+    Dxgi,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -167,6 +186,14 @@ pub enum WarningCode {
     BorderSettingUnsupported,
     CursorSettingUnsupported,
     MinUpdateIntervalUnsupported,
+    /// DXGI could not start; recording with WGC instead (detail says why).
+    CaptureFallback,
+    /// DXGI: the game is not the foreground window; a "not in focus" card is recorded.
+    FocusLost,
+    FocusRestored,
+    /// DXGI: duplication was interrupted (mode change, UAC, fullscreen switch); reconnecting.
+    DuplicationLost,
+    DuplicationRestored,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -224,6 +251,8 @@ pub enum Event {
         audio: bool,
         #[serde(skip_serializing_if = "Option::is_none")]
         audio_mode: Option<String>,
+        /// `dxgi` or `wgc`.
+        capture_method: String,
         path: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         hwnd: Option<u64>,
@@ -380,6 +409,7 @@ mod tests {
             fps: 60,
             audio: true,
             audio_mode: Some("system_loopback".into()),
+            capture_method: "dxgi".into(),
             path: "C:\\x.mp4".into(),
             hwnd: Some(42),
         };
@@ -392,6 +422,15 @@ mod tests {
         assert_eq!(v["width"], 1920);
         assert_eq!(v["height"], 1080);
         assert_eq!(v["hwnd"], 42);
+        assert_eq!(v["captureMethod"], "dxgi");
+    }
+
+    #[test]
+    fn capture_method_defaults_to_auto() {
+        let p: StartParams = serde_json::from_str(r#"{"out":"x.mp4"}"#).unwrap();
+        assert_eq!(p.capture, CaptureMethod::Auto);
+        let p: StartParams = serde_json::from_str(r#"{"out":"x.mp4","capture":"wgc"}"#).unwrap();
+        assert_eq!(p.capture, CaptureMethod::Wgc);
     }
 
     #[test]

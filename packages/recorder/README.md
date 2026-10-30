@@ -1,10 +1,11 @@
 # lvr-recorder
 
 Recorder sidecar for LoL VOD Review (backend A in `docs/PLAN.md` §3.2, `docs/adr/ADR-002-recorder-backend.md`).
-Windows Graphics Capture of the League window (via the `windows-capture` crate) → Media Foundation
+DXGI Desktop Duplication of the League window's monitor, cropped to the window (`src/dup.rs`), or
+Windows Graphics Capture of the window (via the `windows-capture` crate) → Media Foundation
 H.264/HEVC + AAC in MP4. The Electron core spawns it and talks JSON lines over stdin/stdout.
 
-Vanguard rules (PLAN §2.1): WGC with a window handle or monitor only. The game process is never opened
+Vanguard rules (PLAN §2.1): DXGI duplication or WGC with a window handle or monitor only. The game process is never opened
 beyond `PROCESS_QUERY_LIMITED_INFORMATION`; no injection, no hooks, no input, no window messages.
 
 ## Build and test (Windows host, not WSL)
@@ -28,7 +29,7 @@ One JSON object per line. Commands on stdin (`cmd`), events on stdout (`ev`). Fi
 
 | `cmd` | Fields | Notes |
 |---|---|---|
-| `start` | `out` (required), `target`, `fps` (60), `bitrateMbps` (12), `width`/`height` (null = first frame size), `audio` `{game: true, mic: false, micVolume: 100}` (mic gain %, 0–400), `cursor` (false), `border` (false), `codec` (`h264` \| `hevc`) | One session at a time |
+| `start` | `out` (required), `target`, `fps` (60), `bitrateMbps` (12), `width`/`height` (null = first frame size), `audio` `{game: true, mic: false, micVolume: 100}` (mic gain %, 0–400), `cursor` (false), `border` (false), `codec` (`h264` \| `hevc`), `capture` (`auto` \| `dxgi` \| `wgc`) | One session at a time |
 | `stop` | — | Finalizes the MP4, replies `stopped` |
 | `status` | — | Replies `status` |
 | `list-windows` / `list-monitors` | — | Replies `windows` / `monitors` |
@@ -50,13 +51,32 @@ One JSON object per line. Commands on stdin (`cmd`), events on stdout (`ev`). Fi
 | `ev` | When |
 |---|---|
 | `ready` | Once at process start: `version`, `pid` |
-| `started` | First frame captured and encoder open. `qpcStart` = QPC of the first encoded frame (from WGC `SystemRelativeTime`); this is video t=0 for the clock mapper |
+| `started` | First frame captured and encoder open. `qpcStart` = QPC of the first encoded frame (DXGI `LastPresentTime` or WGC `SystemRelativeTime`); this is video t=0 for the clock mapper. `captureMethod`: `dxgi` or `wgc` |
 | `stats` | Every ~2 s while recording |
-| `warning` | Edge-triggered (start and clear): `black_frames[_cleared]`, `frozen_frames[_cleared]`, `window_minimized`/`window_restored`, `size_changed`, `no_frames_yet`, `audio_unavailable`, `mic_unavailable`, `mic_unsupported`, `scale_unavailable`, `*_setting_unsupported` |
+| `warning` | Edge-triggered (start and clear): `black_frames[_cleared]`, `frozen_frames[_cleared]`, `window_minimized`/`window_restored`, `size_changed`, `no_frames_yet`, `audio_unavailable`, `mic_unavailable`, `mic_unsupported`, `scale_unavailable`, `*_setting_unsupported`, `capture_fallback` (DXGI could not start, using WGC), `focus_lost`/`focus_restored` (DXGI: the card is recorded meanwhile), `duplication_lost`/`duplication_restored` |
 | `stopped` | After `stop`, stdin EOF, Ctrl+C, or the window closing (`reason`: `stop`, `stdin_eof`, `interrupt`, `capture_ended`) |
 | `error` | `bad_command`, `already_recording`, `not_recording`, `target_not_found`, `no_frames`, `finalize_failed` |
 
 Closing stdin ends the session cleanly, so if the Electron process dies the recording is still finalized.
+
+## Capture method (`capture`)
+
+- **`auto` (default): DXGI Desktop Duplication**, falling back to WGC (`capture_fallback` warning) when
+  duplication cannot start (no DXGI output for the monitor, rotated monitor, Remote Desktop...).
+  `dxgi` fails instead of falling back; `wgc` forces WGC.
+- Why: WGC capture of the window (or monitor) makes DWM compose the game, so it loses independent
+  flip. PresentMon on the 7800X3D + RTX 4080 at 1440p/240 Hz, Practice Tool, 2026-10-30
+  (`tools/bakeoff/Run-PerfAB.ps1 -Compare methods`): WGC window 1 % low −3.6 % and +9.5 ms
+  present-to-display; DXGI duplication kept independent flip, 1 % lows at baseline, +0 ms.
+- Duplication copies the composed monitor image and crops it to the game's client area on the GPU, so
+  the output size is the client area. It sees whatever is on screen: while League is not the
+  foreground window it records a "League of Legends is not in focus" card (Direct2D, drawn once)
+  instead. The card also covers reconnects after `DXGI_ERROR_ACCESS_LOST` (mode change, UAC, fullscreen
+  switch). Frames are paced on a fixed 60 fps grid; a quiet screen repeats the last frame.
+- One D3D11 device on the monitor's adapter for the whole session, with multithread protection on: the
+  MF transcoder reads our textures from its own threads (without the lock, ~2/3 of runs hung at stop).
+- Needs `VideoEncoder::send_directx_surface`, added in the vendored crate (`vendor/README.md`).
+- `LVR_DUP_TRACE=1` prints a step-by-step trace on stderr.
 
 ## Output (measured 2026-10-29, `--self-test`, ffprobe)
 

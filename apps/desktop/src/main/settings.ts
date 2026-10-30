@@ -63,6 +63,7 @@ export function sanitize(s: Settings): Settings {
     preRollS: preRoll,
     micVolume: Number.isFinite(s.micVolume) ? Math.min(300, Math.max(0, Math.round(s.micVolume))) : DEFAULT_SETTINGS.micVolume,
     recordMic: s.recordMic === undefined ? DEFAULT_SETTINGS.recordMic : Boolean(s.recordMic),
+    compatCapture: Boolean(s.compatCapture),
     autostart: Boolean(s.autostart),
     minimizeToTray: Boolean(s.minimizeToTray),
     queueListVersion: QUEUE_LIST_VERSION,

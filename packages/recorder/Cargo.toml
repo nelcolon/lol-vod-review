@@ -2,7 +2,7 @@
 name = "lvr-recorder"
 version = "0.1.0"
 edition = "2021"
-description = "LoL VOD Review recorder sidecar: Windows Graphics Capture -> Media Foundation H.264, JSON lines on stdin/stdout"
+description = "LoL VOD Review recorder sidecar: DXGI Desktop Duplication (or WGC) -> Media Foundation H.264, JSON lines on stdin/stdout"
 license = "MIT"
 publish = false
 
@@ -16,7 +16,19 @@ windows-capture = "2.0.1"
 # Same major as windows-capture uses, so D3D/WinRT types line up.
 windows = { version = "0.62", features = [
     "Wdk_Graphics_Direct3D",
+    "Foundation",
+    "Graphics_DirectX_Direct3D11",
     "Win32_Foundation",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct2D_Common",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_DirectWrite",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Gdi",
+    "Win32_System_WinRT_Direct3D11",
+    "Win32_UI_HiDpi",
     "Win32_System_Com",
     "Win32_System_Performance",
     "Win32_System_Threading",
@@ -36,3 +48,6 @@ time = { version = "0.3", features = ["formatting"] }
 opt-level = 3
 lto = "thin"
 codegen-units = 1
+
+[patch.crates-io]
+windows-capture = { path = "vendor/windows-capture" }

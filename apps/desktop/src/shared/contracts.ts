@@ -387,6 +387,12 @@ export interface Settings {
   recordMic: boolean;
   /** Mic gain in percent (0-300). */
   micVolume: number;
+  /**
+   * Record with Windows Graphics Capture instead of DXGI Desktop Duplication. WGC makes
+   * Windows compose the game (more latency, lower 1% lows); only for PCs where duplication
+   * misbehaves. The recorder falls back to WGC by itself when duplication cannot start.
+   */
+  compatCapture: boolean;
   autostart: boolean;
   minimizeToTray: boolean;
   /** QUEUE_LIST_VERSION these settings were last migrated to. */
@@ -401,6 +407,7 @@ export const DEFAULT_SETTINGS: Settings = {
   preRollS: 10,
   recordMic: true,
   micVolume: 100,
+  compatCapture: false,
   autostart: false,
   minimizeToTray: true,
   queueListVersion: QUEUE_LIST_VERSION,
