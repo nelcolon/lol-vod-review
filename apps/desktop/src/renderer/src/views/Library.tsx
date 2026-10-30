@@ -14,22 +14,35 @@ const ROLE_ICON: Record<string, string> = { TOP: topIcon, JUNGLE: jungleIcon, MI
 
 const sorted = (names: Iterable<string>) => [...new Set(names)].filter(Boolean).sort((a, b) => a.localeCompare(b));
 
-/** A filter dropdown over champion names; empty string = any. */
-function ChampFilter({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+/** Search box over champion names with suggestions; matches any part of the name. */
+function ChampSearch({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  const id = `champ-${label.toLowerCase()}`;
   return (
-    <label>
+    <label className="champ-search">
       {label}
-      <select value={value} onChange={(e) => onChange(e.target.value)} disabled={options.length === 0 && !value}>
-        <option value="">All</option>
-        {options.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+      <span className="champ-search-box">
+        <input
+          type="search"
+          list={id}
+          value={value}
+          placeholder="Any champion"
+          spellCheck={false}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && onChange('')}
+        />
+        <datalist id={id}>
+          {options.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </span>
     </label>
   );
 }
+
+/** "cait" matches Caitlyn, "lee sin" matches Lee Sin; case and spaces/apostrophes don't matter. */
+const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+const matches = (name: string, query: string) => !query.trim() || norm(name).includes(norm(query));
 
 /** Champion portraits with a role badge, side by side; the first one larger. */
 function Lineup({ champs, v }: { champs: Game['opponents']; v: string | null }) {
@@ -76,20 +89,20 @@ export function Library() {
     (g) =>
       (result === 'all' || g.result === result) &&
       (queue === 'all' || g.queueId === queue) &&
-      (!champ || g.myChampion === champ) &&
-      (!withChamp || g.allies.some((a) => a.champion === withChamp)) &&
-      (!against || g.opponents.some((o) => o.champion === against)),
+      matches(g.myChampion, champ) &&
+      (!withChamp.trim() || g.allies.some((a) => matches(a.champion, withChamp))) &&
+      (!against.trim() || g.opponents.some((o) => matches(o.champion, against))),
   );
-  const anyFilter = result !== 'all' || queue !== 'all' || champ || withChamp || against;
+  const anyFilter = result !== 'all' || queue !== 'all' || !!champ.trim() || !!withChamp.trim() || !!against.trim();
 
   return (
     <section className="library">
       <div className="toolbar">
         <h1>Library</h1>
         <div className="spacer" />
-        <ChampFilter label="Champion" value={champ} options={champs} onChange={setChamp} />
-        <ChampFilter label="With" value={withChamp} options={withChamps} onChange={setWithChamp} />
-        <ChampFilter label="Against" value={against} options={againstChamps} onChange={setAgainst} />
+        <ChampSearch label="Champion" value={champ} options={champs} onChange={setChamp} />
+        <ChampSearch label="With" value={withChamp} options={withChamps} onChange={setWithChamp} />
+        <ChampSearch label="Against" value={against} options={againstChamps} onChange={setAgainst} />
         <label>
           Result
           <select value={result} onChange={(e) => setResult(e.target.value as 'all' | GameResult)}>

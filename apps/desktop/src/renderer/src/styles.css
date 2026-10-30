@@ -106,6 +106,7 @@ button.link.danger {
 }
 select,
 input[type='number'],
+input[type='search'],
 textarea {
   font: inherit;
   color: var(--fg);
@@ -1740,4 +1741,8 @@ table.games tbody tr.res-loss td:first-child {
   height: 100%;
   background: var(--accent, #3b82f6);
   transition: width 0.3s;
+}
+/* library champion search boxes */
+.champ-search input {
+  width: 140px;
 }
