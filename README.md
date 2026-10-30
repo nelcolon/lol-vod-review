@@ -25,3 +25,17 @@ docs/                PLAN.md, ADRs, research
 
 Source is edited from WSL but **built and run on the Windows host** (WGC, port 2999 and the
 LCU are not reachable from WSL). From WSL: `cmd.exe /c "cd /d C:\Users\ncolo\dev\lol-vod-review && npm run dev"`.
+
+## Building the installer
+
+On Windows, with Rust and `tools/bin/ffmpeg.exe` (BtbN win64 LGPL build) in place:
+
+```
+npm run dist
+```
+
+This builds the packages and the recorder, then writes `apps/desktop/release/LoL VOD Review-Setup-<version>.exe`
+(per-user NSIS installer, no admin needed). Bump `version` in `apps/desktop/package.json` for each release.
+The installer is not code-signed yet, so Windows SmartScreen warns on first run ("More info" → "Run anyway").
+The recorder links the C runtime statically (`packages/recorder/.cargo/config.toml`), so it needs no VC++
+redistributable. Windows "N" editions need the Media Feature Pack for Media Foundation.

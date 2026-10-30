@@ -1,4 +1,4 @@
-# electron-builder configuration (NSIS installer). Config only for now — Phase 4 builds it.
+# electron-builder configuration (NSIS installer). Build with `npm run dist` at the repo root.
 appId: com.divilight.lolvodreview
 productName: LoL VOD Review
 directories:
@@ -11,13 +11,12 @@ extraResources:
   # LGPL FFmpeg sidecar (BtbN win64-lgpl). Never bundle libobs (GPL).
   - from: ../../tools/bin/ffmpeg.exe
     to: ffmpeg.exe
-  - from: ../../tools/bin/ffprobe.exe
-    to: ffprobe.exe
   # Recorder sidecar (packages/recorder, `cargo build --release` first).
   - from: ../../packages/recorder/target/release/lvr-recorder.exe
     to: lvr-recorder.exe
 asar: true
 win:
+  icon: resources/icon.png
   target:
     - target: nsis
       arch: [x64]
@@ -31,3 +30,4 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: LoL VOD Review
 publish: null
+electronVersion: 45.1.0
