@@ -65,4 +65,6 @@ export interface Backend {
   applySettings(s: Settings): void;
 
   mediaRoots(): string[];
+  /** Folders whose sub-folders are game recordings: the current and default ones, and any older one still holding games. */
+  recordingRoots(): string[];
 }

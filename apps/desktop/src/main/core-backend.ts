@@ -10,7 +10,7 @@
  * video (replay/spectate drops objective events, so the live log is the source of truth).
  */
 import { appendFileSync, mkdirSync, rmSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import {
   ClockMapper,
   GameStore,
@@ -99,10 +99,13 @@ export class CoreBackend implements Backend {
   private readonly listeners = new Set<(s: RecorderStatus) => void>();
   private retryTimer: NodeJS.Timeout | null = null;
   private discarding = false;
+  /** Recording folders (see recordingRoots); the default is always one. */
+  private readonly roots = new Set<string>();
   private readonly ddragon: Ddragon;
 
   constructor(private readonly opts: CoreBackendOptions) {
     this.ddragon = new Ddragon(opts.ddragonDir);
+    this.roots.add(resolve(opts.recordingsDir));
   }
 
   // --- lifecycle wiring ---------------------------------------------------------------------
@@ -110,6 +113,8 @@ export class CoreBackend implements Backend {
   async start(): Promise<void> {
     mkdirSync(this.opts.recordingsDir, { recursive: true });
     this.store = new GameStore(openDatabase(this.opts.dbPath));
+    // games stay where they were recorded, so every folder that holds one keeps being served
+    for (const path of this.store.segmentPaths()) this.roots.add(resolve(dirname(dirname(path))));
     // A crash mid-game leaves rows in 'recording'/'processing'; mark them failed.
     for (const g of this.store.listGames({ status: ['recording', 'processing'] })) {
       if (g.segment_count === 0) this.store.deleteGame(g.id);
@@ -276,7 +281,7 @@ export class CoreBackend implements Backend {
     if (existing) this.store.updateGame(existing.id, { status: 'recording' });
     g.rowId = row.id;
     const stamp = new Date(g.startedAt).toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    g.dir = join(this.opts.recordingsDir, `${stamp}_${riotId}`);
+    g.dir = join(this.recordingsDirNow(), `${stamp}_${riotId}`);
     mkdirSync(g.dir, { recursive: true });
     return row.id;
   }
@@ -574,13 +579,32 @@ export class CoreBackend implements Backend {
 
   applySettings(s: Settings): void {
     this.settings = s;
+    if (s.recordingsDir) this.roots.add(resolve(s.recordingsDir));
     Object.assign(this.recSettings, recordingSettings(s));
     this.runner?.dispatch({ type: 'userPause', paused: !s.recordingEnabled });
     this.refreshStatus();
   }
 
   mediaRoots(): string[] {
-    return this.opts.mediaRoots;
+    return [...this.opts.mediaRoots, ...this.roots];
+  }
+
+  recordingRoots(): string[] {
+    return [...this.roots];
+  }
+
+  /** Where the next game is saved: the folder from Settings, or the default when it can't be used. */
+  private recordingsDirNow(): string {
+    const custom = this.settings?.recordingsDir;
+    if (custom) {
+      try {
+        mkdirSync(custom, { recursive: true });
+        return custom;
+      } catch (e) {
+        console.warn(`[recorder] recordings folder ${custom} unavailable (${String(e)}), using the default`);
+      }
+    }
+    return this.opts.recordingsDir;
   }
 
   // --- library --------------------------------------------------------------------------------

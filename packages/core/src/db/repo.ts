@@ -296,6 +296,11 @@ export class GameStore {
     return this.db.prepare('DELETE FROM games WHERE id = ?').run(id).changes > 0;
   }
 
+  /** Every recorded video path (to know which folders hold recordings). */
+  segmentPaths(): string[] {
+    return (this.db.prepare('SELECT path FROM segments').all() as Array<{ path: string }>).map((r) => r.path);
+  }
+
   /** Input for `planRetention`. */
   retentionCandidates(): RetentionGame[] {
     return this.listGames({ limit: 100_000 }).map((g) => ({

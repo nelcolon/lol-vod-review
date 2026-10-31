@@ -395,6 +395,8 @@ export interface Settings {
   compatCapture: boolean;
   autostart: boolean;
   minimizeToTray: boolean;
+  /** Folder new recordings go to; '' = the default (%APPDATA%\\@lvr\\desktop\\recordings). */
+  recordingsDir: string;
   /** QUEUE_LIST_VERSION these settings were last migrated to. */
   queueListVersion: number;
 }
@@ -410,6 +412,7 @@ export const DEFAULT_SETTINGS: Settings = {
   compatCapture: false,
   autostart: false,
   minimizeToTray: true,
+  recordingsDir: '',
   queueListVersion: QUEUE_LIST_VERSION,
 };
 
@@ -447,6 +450,12 @@ export interface GameBundle {
   moments: Moment[];
   notes: Note[];
   clips: Clip[];
+}
+
+export interface ChooseFolderResult {
+  settings: Settings;
+  /** Set when the picked folder can't be written to (settings unchanged). */
+  error: string | null;
 }
 
 export interface DeleteGamesResult {

@@ -1818,3 +1818,18 @@ table.games tbody tr.selected td {
   border-radius: 8px;
   background: var(--bg-1);
 }
+/* settings: recordings folder */
+.folder-row {
+  flex-wrap: wrap;
+}
+.folder-path {
+  max-width: 520px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-1);
+  font-size: 12px;
+}

@@ -1,7 +1,7 @@
-import { existsSync, rmSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { BrowserWindow, ipcMain, shell } from 'electron';
-import type { CauseTag, ClipExportResult, ClipPatch, DeleteGamesResult, Drawing, NoteInput, Settings } from '../shared/contracts';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import type { CauseTag, ChooseFolderResult, ClipExportResult, ClipPatch, DeleteGamesResult, Drawing, NoteInput, Settings } from '../shared/contracts';
 import { IPC } from '../shared/ipc';
 import type { Backend } from './backend';
 import { cutClip } from './clips';
@@ -37,9 +37,26 @@ function closeClipWindow(clipId: string): void {
   for (const w of BrowserWindow.getAllWindows()) if (w.webContents.getURL().endsWith(`#clip=${clipId}`)) w.close();
 }
 
-/** Each game records into its own folder right under the recordings folder; only those get removed whole. */
-function isGameFolder(dir: string): boolean {
-  return resolve(dirname(dir)).toLowerCase() === resolve(recordingsDir()).toLowerCase();
+/**
+ * Each game records into its own `<start time>_<game id>` folder right under a recordings folder;
+ * only those get removed whole.
+ */
+function isGameFolder(dir: string, roots: string[]): boolean {
+  const parent = resolve(dirname(dir)).toLowerCase();
+  return /^\d{4}-\d{2}-\d{2}T/.test(basename(dir)) && roots.some((r) => resolve(r).toLowerCase() === parent);
+}
+
+/** The folder new games go to. */
+function currentRecordingsDir(settings: SettingsStore): string {
+  return settings.get().recordingsDir || recordingsDir();
+}
+
+/** Throws with a readable reason when the app can't save recordings in `dir`. */
+function checkWritable(dir: string): void {
+  mkdirSync(dir, { recursive: true });
+  const probe = join(dir, `.lvr-write-test-${process.pid}`);
+  writeFileSync(probe, 'ok');
+  rmSync(probe, { force: true });
 }
 
 // Retries ride out the media protocol still closing its read stream after the player let go.
@@ -56,7 +73,8 @@ async function deleteGame(backend: Backend, id: string): Promise<void> {
       throw new Error(`the video is in use: ${video}`);
     }
   }
-  for (const dir of new Set(files.videos.map((v) => dirname(v)))) if (isGameFolder(dir)) rmSync(dir, RM);
+  const roots = backend.recordingRoots();
+  for (const dir of new Set(files.videos.map((v) => dirname(v)))) if (isGameFolder(dir, roots)) rmSync(dir, RM);
   for (const clip of files.clips) {
     rmSync(clip.path, RM);
     closeClipWindow(clip.id);
@@ -182,7 +200,33 @@ export function registerIpc({ backend, settings, getWindow, openClipWindow, upda
   ipcMain.handle(IPC.revealGame, async (_e, id: unknown) => {
     const video = (await backend.gameFiles(assertString(id, 'id')))?.videos.find((v) => existsSync(v));
     if (video) shell.showItemInFolder(video);
-    else await shell.openPath(recordingsDir());
+    else await shell.openPath(currentRecordingsDir(settings));
+  });
+
+  ipcMain.handle(IPC.openRecordingsDir, async () => {
+    const dir = currentRecordingsDir(settings);
+    mkdirSync(dir, { recursive: true });
+    await shell.openPath(dir);
+  });
+
+  ipcMain.handle(IPC.chooseRecordingsDir, async (): Promise<ChooseFolderResult> => {
+    const win = getWindow();
+    const opts: Electron.OpenDialogOptions = {
+      title: 'Folder for new recordings',
+      defaultPath: currentRecordingsDir(settings),
+      properties: ['openDirectory', 'createDirectory'],
+    };
+    const pick = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
+    const dir = pick.canceled ? undefined : pick.filePaths[0];
+    if (!dir) return { settings: settings.get(), error: null };
+    try {
+      checkWritable(dir);
+    } catch (err) {
+      return { settings: settings.get(), error: `Can't save recordings in ${dir}: ${err instanceof Error ? err.message : String(err)}` };
+    }
+    // the default folder is stored as '' so it follows %APPDATA% if that ever moves
+    const same = resolve(dir).toLowerCase() === resolve(recordingsDir()).toLowerCase();
+    return { settings: settings.patch({ recordingsDir: same ? '' : dir }), error: null };
   });
 
   ipcMain.handle(IPC.revealPath, (_e, path: unknown) => {

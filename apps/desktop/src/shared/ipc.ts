@@ -4,6 +4,7 @@ import type {
   ClipBundle,
   PlayState,
   ClipExportResult,
+  ChooseFolderResult,
   ClipPatch,
   DeleteGamesResult,
   Game,
@@ -32,6 +33,8 @@ export const IPC = {
   revealPath: 'lvr:revealPath',
   revealGame: 'lvr:revealGame',
   deleteGames: 'lvr:deleteGames',
+  chooseRecordingsDir: 'lvr:chooseRecordingsDir',
+  openRecordingsDir: 'lvr:openRecordingsDir',
   getSettings: 'lvr:getSettings',
   setSettings: 'lvr:setSettings',
   getRecorderStatus: 'lvr:getRecorderStatus',
@@ -70,6 +73,9 @@ export interface LvrApi {
   revealGame(id: string): Promise<void>;
   /** Deletes the games with their videos, notes and clips. Never the game being recorded. */
   deleteGames(ids: string[]): Promise<DeleteGamesResult>;
+  /** Folder picker for new recordings; saves the choice when the folder is writable. */
+  chooseRecordingsDir(): Promise<ChooseFolderResult>;
+  openRecordingsDir(): Promise<void>;
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;
   getRecorderStatus(): Promise<RecorderStatus>;

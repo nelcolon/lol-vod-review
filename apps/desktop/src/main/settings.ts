@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, isAbsolute } from 'node:path';
 import { DEFAULT_SETTINGS, BITRATE_PRESETS, OTHER_MODES, QUEUE_LIST_VERSION, type Settings } from '../shared/contracts';
 
 type Listener = (s: Settings) => void;
@@ -66,6 +66,7 @@ export function sanitize(s: Settings): Settings {
     compatCapture: Boolean(s.compatCapture),
     autostart: Boolean(s.autostart),
     minimizeToTray: Boolean(s.minimizeToTray),
+    recordingsDir: typeof s.recordingsDir === 'string' && isAbsolute(s.recordingsDir.trim()) ? s.recordingsDir.trim() : '',
     queueListVersion: QUEUE_LIST_VERSION,
   };
 }

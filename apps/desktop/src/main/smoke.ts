@@ -164,6 +164,12 @@ async function runDeleteChecks(main: BrowserWindow): Promise<Check[]> {
   check('confirmed delete removes both games', after === before - 2, { before, after });
   check('table shows the rest', (await js<number>(`document.querySelectorAll('table.games tbody tr').length`)) === after);
   await shot('5-library-after');
+
+  await js(`[...document.querySelectorAll('.topbar button')].find((b) => b.textContent === 'Settings').click()`);
+  await wait(400);
+  const folderRow = await js<string>(`[...document.querySelectorAll('.settings .row')].find((r) => r.textContent.startsWith('Recordings folder'))?.textContent ?? ''`);
+  check('Settings shows the recordings folder with Change and Open', folderRow.includes('Change') && folderRow.includes('Open'), folderRow.slice(0, 80));
+  await shot('6-settings');
   return checks;
 }
 

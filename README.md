@@ -59,8 +59,9 @@ League, never sends input, and installs no drivers, so it is compatible with Van
 - **Coaching:** all analysis is shown after the game, per Riot policy. There is no in-game
   overlay, no cloud upload and no Overwolf.
 
-Recordings stay on your PC (`%APPDATA%\@lvr\desktop\recordings`). A storage quota (50 GB by
-default) deletes the oldest unpinned games first.
+Recordings stay on your PC, in `%APPDATA%\@lvr\desktop\recordings` unless you pick another folder
+in Settings → Recordings folder (for example a bigger drive). A new folder applies to the next
+game; games already recorded stay where they are and keep working.
 
 ## Trying changes before a release
 

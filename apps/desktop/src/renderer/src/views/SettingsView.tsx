@@ -43,6 +43,7 @@ export function SettingsView() {
           </span>
           <span className="muted small">Oldest unpinned games are deleted first; clips and pinned games are exempt.</span>
         </label>
+        <RecordingsFolder />
         <label className="row">
           Jump to this long before a moment
           <span className="inline">
@@ -108,6 +109,39 @@ export function SettingsView() {
       </fieldset>
       <UpdateSection />
     </section>
+  );
+}
+
+/** Where new games are saved; already recorded games stay where they are. */
+function RecordingsFolder() {
+  const dir = useStore((s) => s.settings?.recordingsDir ?? '');
+  const update = useStore((s) => s.updateSettings);
+  const showToast = useStore((s) => s.showToast);
+  const choose = async () => {
+    const res = await window.lvr.chooseRecordingsDir();
+    if (res.error) showToast(res.error, 'error');
+  };
+  return (
+    <div className="row">
+      Recordings folder
+      <span className="inline folder-row">
+        <span className="mono folder-path" title={dir || undefined}>
+          {dir || 'Default (%APPDATA%\\@lvr\\desktop\\recordings)'}
+        </span>
+        <button type="button" onClick={() => void choose()}>
+          Change…
+        </button>
+        <button type="button" onClick={() => void window.lvr.openRecordingsDir()}>
+          Open
+        </button>
+        {dir && (
+          <button type="button" className="link small" onClick={() => void update({ recordingsDir: '' })}>
+            Use default
+          </button>
+        )}
+      </span>
+      <span className="muted small">New games are saved here. Games you already recorded stay in their folder and keep working.</span>
+    </div>
   );
 }
 

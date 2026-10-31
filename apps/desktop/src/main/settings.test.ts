@@ -14,4 +14,11 @@ describe('settings', () => {
     const s = sanitize({ ...DEFAULT_SETTINGS, queues: [420, 450] });
     expect(s.queues).not.toContain(OTHER_MODES);
   });
+
+  it('keeps an absolute recordings folder and drops anything else', () => {
+    expect(sanitize({ ...DEFAULT_SETTINGS, recordingsDir: ' D:\\LoL VODs ' }).recordingsDir).toBe('D:\\LoL VODs');
+    expect(sanitize({ ...DEFAULT_SETTINGS, recordingsDir: 'relative\\dir' }).recordingsDir).toBe('');
+    expect(sanitize({ ...DEFAULT_SETTINGS, recordingsDir: 42 as unknown as string }).recordingsDir).toBe('');
+    expect(sanitize({ ...DEFAULT_SETTINGS, recordingsDir: undefined as unknown as string }).recordingsDir).toBe('');
+  });
 });

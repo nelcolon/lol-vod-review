@@ -679,6 +679,10 @@ export class MockBackend implements Backend {
     return this.opts.mediaRoots;
   }
 
+  recordingRoots(): string[] {
+    return [];
+  }
+
   /** Fake lifecycle: idle 40 s -> recording 20 s -> post-processing 6 s -> idle. */
   private tick(): void {
     if (!this.status.enabled) return;
