@@ -23,6 +23,9 @@ export class Updater {
       return;
     }
     autoUpdater.autoDownload = false;
+    // A local test build (0.3.10-local.…, tools/try-local.mjs) would otherwise look for
+    // prereleases on a "local" channel; only official releases exist, and they update over it.
+    autoUpdater.allowPrerelease = false;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.on('checking-for-update', () => this.set({ state: 'checking', error: null }));
     autoUpdater.on('update-available', (i) => this.set({ state: 'available', latest: i.version }));

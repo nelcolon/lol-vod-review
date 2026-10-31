@@ -62,6 +62,21 @@ League, never sends input, and installs no drivers, so it is compatible with Van
 Recordings stay on your PC (`%APPDATA%\@lvr\desktop\recordings`). A storage quota (50 GB by
 default) deletes the oldest unpinned games first.
 
+## Trying changes before a release
+
+`npm run try` (on Windows, with League closed) builds the installer on this PC and installs it over
+the installed app, in about 2–3 minutes and without GitHub:
+
+1. Typecheck, unit tests and the smoke test (the real app driven against the mock library).
+   If any of them fails, nothing is installed.
+2. Builds the installer as `<next version>-local.<MMDD.HHMM>` (Settings → About & updates shows it).
+3. Closes the app, installs silently into the same folder (recordings and settings are kept)
+   and starts it.
+
+`npm run try -- --quick` skips step 1. It refuses to run while League is running, because
+closing the app would stop a recording (`--force` overrides). The next official release updates
+over a local build as usual.
+
 ## Publishing a release
 
 Releases are built by GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml))
