@@ -1,0 +1,41 @@
+# Typecheck and tests on every push to main, so a release only has to build and publish
+# (`npm run release` refuses to tag a commit whose CI run did not pass).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/recorder
+
+      - run: npm ci
+
+      - name: Typecheck and test
+        run: |
+          npm run build -w packages/schema -w packages/core
+          npm run typecheck
+          npm test
+          cargo test --manifest-path packages/recorder/Cargo.toml

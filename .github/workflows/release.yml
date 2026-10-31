@@ -1,5 +1,6 @@
 # Builds the Windows installer and publishes a GitHub release when a v* tag is pushed
 # (`npm run release` tags the current version). Can also be run by hand to test the build.
+# Typecheck and tests run in ci.yml on every push; the release script only tags commits that passed.
 name: Release
 
 on:
@@ -49,13 +50,6 @@ jobs:
         run: ./tools/fetch-ffmpeg.ps1
 
       - run: npm ci
-
-      - name: Typecheck and test
-        run: |
-          npm run build -w packages/schema -w packages/core
-          npm run typecheck
-          npm test
-          cargo test --release --manifest-path packages/recorder/Cargo.toml
 
       - name: Build installer
         run: npm run dist

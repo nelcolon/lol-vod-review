@@ -67,13 +67,16 @@ default) deletes the oldest unpinned games first.
 Releases are built by GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml))
 on a Windows runner:
 
+Every push to `main` runs typecheck and tests ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+Changes collect on `main` and go out together in one release:
+
 1. Bump `version` in `apps/desktop/package.json`, commit and push to `main`.
-2. Run `npm run release`. It tags the commit `v<version>` and pushes the tag.
+2. When CI has passed on that commit, run `npm run release`. It refuses to tag a commit whose CI
+   run is missing, still running or failed; otherwise it tags `v<version>` and pushes the tag.
 3. The workflow then:
-   1. Typechecks and runs the tests.
-   2. Fetches the LGPL FFmpeg build.
-   3. Builds the recorder and the installer.
-   4. Publishes the release with the installer, `latest.yml` and the blockmap (what installed
+   1. Fetches the LGPL FFmpeg build.
+   2. Builds the recorder and the installer.
+   3. Publishes the release with the installer, `latest.yml` and the blockmap (what installed
       apps read to update themselves) and the list of commits since the last tag.
 
 The **Release** workflow can also be started by hand from the Actions tab. It builds the
