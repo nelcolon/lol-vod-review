@@ -11,6 +11,13 @@ import type {
   Settings,
 } from '../shared/contracts';
 
+export interface GameFiles {
+  videos: string[];
+  clips: Clip[];
+  /** The game is being recorded right now (it must not be deleted). */
+  recording: boolean;
+}
+
 /**
  * The seam between the Electron shell and the product core.
  *
@@ -45,6 +52,11 @@ export interface Backend {
   updateClip(id: string, patch: Partial<Pick<Clip, 'title' | 'description' | 'tInMs' | 'tOutMs' | 'path' | 'drawings'>>): Promise<Clip>;
   /** Returns the deleted clip (so the caller can remove its file). */
   deleteClip(id: string): Promise<Clip | null>;
+
+  /** Video files and clips of a game, for the caller to reveal or delete; null if unknown. */
+  gameFiles(id: string): Promise<GameFiles | null>;
+  /** Removes the game's rows (notes, moments, clips...). The caller deletes the files first. */
+  deleteGame(id: string): Promise<void>;
 
   getRecorderStatus(): RecorderStatus;
   onRecorderStatus(cb: (s: RecorderStatus) => void): () => void;

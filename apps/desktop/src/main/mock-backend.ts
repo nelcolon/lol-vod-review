@@ -28,7 +28,7 @@ import type {
   Theme,
 } from '../shared/contracts';
 import { CAUSE_TAGS, OPPONENT_ROLES, queueName } from '../shared/contracts';
-import type { Backend } from './backend';
+import type { Backend, GameFiles } from './backend';
 import { computePlayState, involvedIn, killsIn, type SavedPlayer } from './core/playstate';
 import type { DdragonData } from './core/ddragon';
 
@@ -635,6 +635,19 @@ export class MockBackend implements Backend {
     this.state.clips = this.state.clips.filter((c) => c.id !== id);
     this.saveState();
     return clip;
+  }
+
+  async gameFiles(id: string): Promise<GameFiles | null> {
+    if (!this.games.has(id)) return null;
+    // Every mock segment is the shared sample video: never hand it out for deletion.
+    return { videos: [], clips: this.state.clips.filter((c) => c.gameId === id), recording: false };
+  }
+
+  async deleteGame(id: string): Promise<void> {
+    this.games.delete(id);
+    this.state.notes = this.state.notes.filter((n) => n.gameId !== id);
+    this.state.clips = this.state.clips.filter((c) => c.gameId !== id);
+    this.saveState();
   }
 
   async addClip(clip: Omit<Clip, 'id' | 'createdAt' | 'drawings' | 'description'>): Promise<Clip> {

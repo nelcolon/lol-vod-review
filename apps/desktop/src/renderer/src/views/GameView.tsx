@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PlayFlash } from '../components/PlayFlash';
 import type { Moment } from '@shared/contracts';
 import { formatTime, nextMomentIndex, prevMomentIndex } from '@shared/timeline-math';
+import { DeleteGamesDialog } from '../components/DeleteGamesDialog';
 import { FullscreenBar } from '../components/FullscreenBar';
+import { FolderIcon, TrashIcon } from '../components/Icons';
 import { MomentCard } from '../components/MomentCard';
 import { MomentsRail } from '../components/MomentsRail';
 import { NotesPanel } from '../components/NotesPanel';
@@ -27,6 +29,8 @@ export function GameView() {
   const showToast = useStore((s) => s.showToast);
   const exportClip = useStore((s) => s.exportClip);
   const [isFs, setIsFs] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const recording = useStore((s) => !!bundle && s.recorder?.state !== 'idle' && s.recorder?.gameId === bundle.game.id);
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
@@ -165,11 +169,43 @@ export function GameView() {
     }),
     [fps, starts, momentsByTime, goToMoment, addBookmark, navigate, toggleFullscreen],
   );
-  useKeyboard(handlers, Boolean(bundle));
+  useKeyboard(handlers, Boolean(bundle) && !confirmDelete);
 
   if (loading || !bundle) return <p className="muted">Loading game…</p>;
-  if (!segment) return <p className="muted">No video was recorded for this game.</p>;
   const { game } = bundle;
+  const fileActions = (
+    <>
+      <button type="button" className="icon-btn labeled" onClick={() => void window.lvr.revealGame(game.id)} title="Open the folder with this video">
+        <FolderIcon /> Show in folder
+      </button>
+      <button
+        type="button"
+        className="icon-btn labeled danger-hover"
+        onClick={() => {
+          player.pause();
+          setConfirmDelete(true);
+        }}
+        disabled={recording || game.status === 'recording'}
+        title={recording ? 'Being recorded' : 'Delete this game and its video'}
+      >
+        <TrashIcon /> Delete
+      </button>
+      {confirmDelete && <DeleteGamesDialog games={[game]} onClose={() => setConfirmDelete(false)} />}
+    </>
+  );
+  if (!segment)
+    return (
+      <section className="game">
+        <div className="game-head">
+          <button type="button" onClick={() => navigate({ view: 'library' })}>
+            ← Library
+          </button>
+          <span className="muted">No video was recorded for this game.</span>
+          <div className="spacer" />
+          {fileActions}
+        </div>
+      </section>
+    );
   const durationMs = playerState.durationMs || segment.durationMs;
 
   return (
@@ -190,6 +226,7 @@ export function GameView() {
         </span>
         <div className="spacer" />
         <span className="muted small">{segment.width}×{segment.height}@{segment.fps} · {segment.codec}</span>
+        {fileActions}
       </div>
 
       <div className="game-body">

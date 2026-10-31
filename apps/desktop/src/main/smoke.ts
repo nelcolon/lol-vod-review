@@ -118,6 +118,55 @@ async function runClipChecks(main: BrowserWindow): Promise<Check[]> {
   return checks;
 }
 
+/** Library delete flow through the UI. LVR_SMOKE_SHOTS=<dir> also saves screenshots of each step. */
+async function runDeleteChecks(main: BrowserWindow): Promise<Check[]> {
+  const js = <T>(code: string) => main.webContents.executeJavaScript(code, true) as Promise<T>;
+  const shotsDir = process.env['LVR_SMOKE_SHOTS'];
+  const shot = async (name: string) => {
+    if (!shotsDir) return;
+    const { writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    writeFileSync(join(shotsDir, `${name}.png`), (await main.webContents.capturePage()).toPNG());
+  };
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const checks: Check[] = [];
+  const check = (name: string, ok: unknown, info: unknown = null) => checks.push({ name, ok: !!ok, info });
+
+  // review view: Delete asks first, Cancel keeps the game
+  await js(`document.querySelector('table.games tbody tr')?.click()`);
+  await wait(1500);
+  const headButtons = await js<string[]>(`[...document.querySelectorAll('.game-head button')].map((b) => b.textContent.trim())`);
+  check('review header has Show in folder + Delete', headButtons.includes('Show in folder') && headButtons.includes('Delete'), headButtons);
+  await js(`[...document.querySelectorAll('.game-head button')].find((b) => b.textContent.trim() === 'Delete').click()`);
+  await wait(300);
+  await shot('1-review-confirm');
+  check('review Delete opens the confirmation', await js(`!!document.querySelector('.confirm-dialog')`));
+  await js(`[...document.querySelectorAll('.confirm-dialog button')].find((b) => b.textContent === 'Cancel').click()`);
+  await wait(200);
+  check('Cancel closes it and keeps the review open', await js(`!document.querySelector('.confirm-dialog') && !!document.querySelector('video')`));
+  await shot('2-review-head');
+
+  // library: select two rows, delete them through the dialog
+  await js(`[...document.querySelectorAll('.game-head button')].find((b) => b.textContent.includes('Library')).click()`);
+  await wait(800);
+  const before = (await js<unknown[]>(`window.lvr.listGames()`)).length;
+  await js(`[...document.querySelectorAll('td.lib-check input')].slice(0, 2).forEach((c) => c.click())`);
+  await wait(200);
+  check('selection bar shows 2 selected', (await js<string>(`document.querySelector('.lib-selection')?.textContent ?? ''`)).includes('2 selected'));
+  await shot('3-library-selected');
+  await js(`document.querySelector('.lib-selection button.danger').click()`);
+  await wait(300);
+  await shot('4-library-confirm');
+  check('confirmation lists both games', (await js<number>(`document.querySelectorAll('.confirm-list li').length`)) === 2);
+  await js(`document.querySelector('.confirm-dialog button.danger').click()`);
+  await wait(1500);
+  const after = (await js<unknown[]>(`window.lvr.listGames()`)).length;
+  check('confirmed delete removes both games', after === before - 2, { before, after });
+  check('table shows the rest', (await js<number>(`document.querySelectorAll('table.games tbody tr').length`)) === after);
+  await shot('5-library-after');
+  return checks;
+}
+
 export function maybeRunSmoke(win: BrowserWindow): void {
   if (process.env['LVR_SMOKE'] !== '1') return;
   const timeout = setTimeout(() => {
@@ -128,6 +177,7 @@ export function maybeRunSmoke(win: BrowserWindow): void {
     try {
       const results = (await win.webContents.executeJavaScript(SCRIPT, true)) as Check[];
       results.push(...(await runClipChecks(win)));
+      results.push(...(await runDeleteChecks(win)));
       let failed = 0;
       for (const r of results) {
         if (!r.ok) failed++;

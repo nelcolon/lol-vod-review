@@ -8,6 +8,8 @@ import middleIcon from '../assets/roles/middle.png';
 import topIcon from '../assets/roles/top.png';
 import utilityIcon from '../assets/roles/utility.png';
 import { DdIcon } from '../components/DdIcon';
+import { DeleteGamesDialog } from '../components/DeleteGamesDialog';
+import { FolderIcon, TrashIcon } from '../components/Icons';
 import { useStore } from '../store';
 
 const ROLE_ICON: Record<string, string> = { TOP: topIcon, JUNGLE: jungleIcon, MIDDLE: middleIcon, BOTTOM: bottomIcon, UTILITY: utilityIcon };
@@ -70,6 +72,7 @@ export function Library() {
   const setResult = useStore((s) => s.setLibraryResult);
   const setQueue = useStore((s) => s.setLibraryQueue);
   const openGame = useStore((s) => s.openGame);
+  const recordingId = useStore((s) => (s.recorder && s.recorder.state !== 'idle' ? s.recorder.gameId : null));
 
   const queuesPresent = useMemo(() => {
     const ids = new Set(games.map((g) => g.queueId));
@@ -93,6 +96,20 @@ export function Library() {
       (!withChamp.trim() || g.allies.some((a) => matches(a.champion, withChamp))) &&
       (!against.trim() || g.opponents.some((o) => matches(o.champion, against))),
   );
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [toDelete, setToDelete] = useState<Game[] | null>(null);
+  const isRecording = (g: Game) => g.status === 'recording' || g.id === recordingId;
+  const deletable = filtered.filter((g) => !isRecording(g));
+  // only rows still shown count (a filter or a delete may have hidden some)
+  const picked = deletable.filter((g) => selected.has(g.id));
+  const allPicked = deletable.length > 0 && picked.length === deletable.length;
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+
   const anyFilter = result !== 'all' || queue !== 'all' || !!champ.trim() || !!withChamp.trim() || !!against.trim();
 
   return (
@@ -139,6 +156,26 @@ export function Library() {
           </button>
         )}
       </div>
+      {picked.length > 0 && (
+        <div className="lib-selection">
+          <strong>{picked.length} selected</strong>
+          <button type="button" className="danger" onClick={() => setToDelete(picked)}>
+            Delete selected
+          </button>
+          <button type="button" className="link small" onClick={() => setSelected(new Set())}>
+            Clear selection
+          </button>
+        </div>
+      )}
+      {toDelete && (
+        <DeleteGamesDialog
+          games={toDelete}
+          onClose={(deleted) => {
+            setToDelete(null);
+            if (deleted.length) setSelected((prev) => new Set([...prev].filter((id) => !deleted.includes(id))));
+          }}
+        />
+      )}
       {loading && games.length === 0 ? (
         <p className="muted">Loading…</p>
       ) : filtered.length === 0 ? (
@@ -147,6 +184,19 @@ export function Library() {
         <table className="games">
           <thead>
             <tr>
+              <th className="lib-check">
+                <input
+                  type="checkbox"
+                  checked={allPicked}
+                  ref={(el) => {
+                    if (el) el.indeterminate = picked.length > 0 && !allPicked;
+                  }}
+                  onChange={() => setSelected(allPicked ? new Set() : new Set(deletable.map((g) => g.id)))}
+                  disabled={deletable.length === 0}
+                  title={allPicked ? 'Unselect all' : 'Select all shown'}
+                  aria-label="Select all"
+                />
+              </th>
               <th>Date</th>
               <th>Champion</th>
               <th>With</th>
@@ -157,11 +207,28 @@ export function Library() {
               <th>Duration</th>
               <th>Size</th>
               <th>Review</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {filtered.map((g) => (
-              <tr key={g.id} className={`res-${g.result}`} onClick={() => void openGame(g.id)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && void openGame(g.id)}>
+              <tr
+                key={g.id}
+                className={`res-${g.result} ${selected.has(g.id) ? 'selected' : ''}`}
+                onClick={() => void openGame(g.id)}
+                tabIndex={0}
+                onKeyDown={(e) => e.target === e.currentTarget && e.key === 'Enter' && void openGame(g.id)}
+              >
+                <td className="lib-check" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(g.id)}
+                    disabled={isRecording(g)}
+                    onChange={() => toggle(g.id)}
+                    title={isRecording(g) ? 'Being recorded' : 'Select'}
+                    aria-label={`Select ${g.myChampion} ${formatDate(g.startedAt)}`}
+                  />
+                </td>
                 <td>{formatDate(g.startedAt)}</td>
                 <td>
                   <span className="lib-champ">
@@ -190,6 +257,21 @@ export function Library() {
                 <td className="mono">{formatBytes(g.sizeBytes)}</td>
                 <td>
                   <span className={`review ${g.reviewStatus}`}>{REVIEW_LABEL[g.reviewStatus]}</span>
+                </td>
+                <td className="lib-actions" onClick={(e) => e.stopPropagation()}>
+                  <button type="button" className="icon-btn" onClick={() => void window.lvr.revealGame(g.id)} title="Show in folder" aria-label="Show in folder">
+                    <FolderIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn danger-hover"
+                    onClick={() => setToDelete([g])}
+                    disabled={isRecording(g)}
+                    title={isRecording(g) ? 'Being recorded' : 'Delete'}
+                    aria-label="Delete"
+                  >
+                    <TrashIcon />
+                  </button>
                 </td>
               </tr>
             ))}

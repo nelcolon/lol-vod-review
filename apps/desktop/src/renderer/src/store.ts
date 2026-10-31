@@ -65,6 +65,8 @@ export interface AppState {
   deleteNote(id: string): Promise<void>;
   setTags(momentId: string, tags: CauseTag[]): Promise<void>;
   exportClip(tInMs: number, tOutMs: number, title?: string): Promise<void>;
+  /** Deletes games and their files (after the caller asked the user). Returns the ids deleted. */
+  deleteGames(ids: string[]): Promise<string[]>;
   showToast(text: string, kind?: Toast['kind'], action?: Toast['action']): void;
   dismissToast(): void;
 }
@@ -208,6 +210,30 @@ export const useStore = create<AppState>((set, get) => ({
     } else {
       get().showToast(`Clip export failed: ${res.error ?? 'unknown error'}`, 'error');
     }
+  },
+
+  async deleteGames(ids) {
+    // Leave the review first so the player lets go of the video file.
+    if (get().bundle && ids.includes(get().bundle!.game.id)) set({ route: { view: 'library' }, bundle: null, selectedMomentId: null });
+    let res;
+    try {
+      res = await window.lvr.deleteGames(ids);
+    } catch (err) {
+      get().showToast(`Delete failed: ${String(err)}`, 'error');
+      return [];
+    }
+    await get().loadGames();
+    if (res.failed.length === 0) get().showToast(res.deleted.length === 1 ? 'Game deleted' : `${res.deleted.length} games deleted`);
+    else {
+      const why = res.failed[0]!.error;
+      get().showToast(
+        res.deleted.length
+          ? `${res.deleted.length} deleted, ${res.failed.length} not deleted: ${why}`
+          : `${res.failed.length === 1 ? 'Game' : `${res.failed.length} games`} not deleted: ${why}`,
+        'error',
+      );
+    }
+    return res.deleted;
   },
 
   showToast(text, kind = 'info', action) {

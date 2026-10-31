@@ -1,10 +1,11 @@
-import { rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { BrowserWindow, ipcMain, shell } from 'electron';
-import type { CauseTag, ClipExportResult, ClipPatch, Drawing, NoteInput, Settings } from '../shared/contracts';
+import type { CauseTag, ClipExportResult, ClipPatch, DeleteGamesResult, Drawing, NoteInput, Settings } from '../shared/contracts';
 import { IPC } from '../shared/ipc';
 import type { Backend } from './backend';
 import { cutClip } from './clips';
-import { clipsDir, ffmpegPath } from './paths';
+import { clipsDir, ffmpegPath, recordingsDir } from './paths';
 import type { SettingsStore } from './settings';
 import type { Updater } from './updater';
 
@@ -30,6 +31,37 @@ function cleanDrawings(v: unknown): Drawing[] {
     );
     return [{ id: x.id, tMs: x.tMs, holdMs: typeof x.holdMs === 'number' ? x.holdMs : 3000, shapes }];
   });
+}
+
+function closeClipWindow(clipId: string): void {
+  for (const w of BrowserWindow.getAllWindows()) if (w.webContents.getURL().endsWith(`#clip=${clipId}`)) w.close();
+}
+
+/** Each game records into its own folder right under the recordings folder; only those get removed whole. */
+function isGameFolder(dir: string): boolean {
+  return resolve(dirname(dir)).toLowerCase() === resolve(recordingsDir()).toLowerCase();
+}
+
+// Retries ride out the media protocol still closing its read stream after the player let go.
+const RM = { recursive: true, force: true, maxRetries: 10, retryDelay: 200 } as const;
+
+async function deleteGame(backend: Backend, id: string): Promise<void> {
+  const files = await backend.gameFiles(id);
+  if (!files) throw new Error('game not found');
+  if (files.recording) throw new Error('it is being recorded right now');
+  for (const video of files.videos) {
+    try {
+      rmSync(video, RM);
+    } catch {
+      throw new Error(`the video is in use: ${video}`);
+    }
+  }
+  for (const dir of new Set(files.videos.map((v) => dirname(v)))) if (isGameFolder(dir)) rmSync(dir, RM);
+  for (const clip of files.clips) {
+    rmSync(clip.path, RM);
+    closeClipWindow(clip.id);
+  }
+  await backend.deleteGame(id);
 }
 
 function assertString(v: unknown, name: string): string {
@@ -131,7 +163,26 @@ export function registerIpc({ backend, settings, getWindow, openClipWindow, upda
     if (!clip) return;
     rmSync(clip.path, { force: true });
     broadcastClipsChanged(clip.gameId);
-    for (const w of BrowserWindow.getAllWindows()) if (w.webContents.getURL().endsWith(`#clip=${clip.id}`)) w.close();
+    closeClipWindow(clip.id);
+  });
+
+  ipcMain.handle(IPC.deleteGames, async (_e, ids: unknown): Promise<DeleteGamesResult> => {
+    const result: DeleteGamesResult = { deleted: [], failed: [] };
+    for (const id of Array.isArray(ids) ? ids : []) {
+      try {
+        await deleteGame(backend, assertString(id, 'id'));
+        result.deleted.push(id);
+      } catch (err) {
+        result.failed.push({ id: String(id), error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+    return result;
+  });
+
+  ipcMain.handle(IPC.revealGame, async (_e, id: unknown) => {
+    const video = (await backend.gameFiles(assertString(id, 'id')))?.videos.find((v) => existsSync(v));
+    if (video) shell.showItemInFolder(video);
+    else await shell.openPath(recordingsDir());
   });
 
   ipcMain.handle(IPC.revealPath, (_e, path: unknown) => {

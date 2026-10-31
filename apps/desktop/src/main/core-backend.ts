@@ -30,7 +30,7 @@ import {
   type SegmentRef,
   type Team,
 } from '@lvr/core';
-import type { Backend } from './backend';
+import type { Backend, GameFiles } from './backend';
 import { Ddragon } from './core/ddragon';
 import { destroyAgents, liveFetch } from './core/http';
 import { LcuWatcher, type LcuSessionInfo } from './core/lcu';
@@ -767,6 +767,21 @@ export class CoreBackend implements Backend {
     });
     if (!row) throw new Error(`unknown clip ${id}`);
     return mapClip(row);
+  }
+
+  async gameFiles(id: string): Promise<GameFiles | null> {
+    const detail = this.store.getGame(Number(id));
+    if (!detail) return null;
+    return {
+      videos: detail.segments.map((seg) => seg.path),
+      clips: detail.clips.map(mapClip),
+      recording: this.live?.rowId === detail.game.id,
+    };
+  }
+
+  async deleteGame(id: string): Promise<void> {
+    if (this.live?.rowId === Number(id)) throw new Error('this game is being recorded');
+    this.store.deleteGame(Number(id));
   }
 
   async deleteClip(id: string): Promise<Clip | null> {

@@ -5,6 +5,7 @@ import type {
   PlayState,
   ClipExportResult,
   ClipPatch,
+  DeleteGamesResult,
   Game,
   GameBundle,
   Note,
@@ -29,6 +30,8 @@ export const IPC = {
   deleteClip: 'lvr:deleteClip',
   openClip: 'lvr:openClip',
   revealPath: 'lvr:revealPath',
+  revealGame: 'lvr:revealGame',
+  deleteGames: 'lvr:deleteGames',
   getSettings: 'lvr:getSettings',
   setSettings: 'lvr:setSettings',
   getRecorderStatus: 'lvr:getRecorderStatus',
@@ -63,6 +66,10 @@ export interface LvrApi {
   /** A clip of this game was created, edited or deleted (any window). */
   onClipsChanged(cb: (gameId: string) => void): () => void;
   revealPath(path: string): Promise<void>;
+  /** Opens Explorer on the game's video (the recordings folder when it has none). */
+  revealGame(id: string): Promise<void>;
+  /** Deletes the games with their videos, notes and clips. Never the game being recorded. */
+  deleteGames(ids: string[]): Promise<DeleteGamesResult>;
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;
   getRecorderStatus(): Promise<RecorderStatus>;

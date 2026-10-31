@@ -31,7 +31,8 @@ Feature Pack.
   (microphone and its volume are set in Settings).
 - **Library.** Every game with your champion and role, the player you were with (your support,
   ADC, jungler or mid depending on your role) and the enemies you played against. Results are
-  coloured green for wins and red for losses.
+  coloured green for wins and red for losses. Each row (and the review screen) has **Show in
+  folder** and **Delete**; tick several rows to delete them together. Deleting always asks first.
 - **Moments.** Deaths, kills, assists, objectives, towers and aces in the order they happened,
   filterable, each jumping to a few seconds before it (5–90 s, default 10).
 - **Game state per moment.** Everyone's items, summoner spells, level and K/D/A around the play;

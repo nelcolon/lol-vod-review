@@ -449,6 +449,12 @@ export interface GameBundle {
   clips: Clip[];
 }
 
+export interface DeleteGamesResult {
+  deleted: string[];
+  /** Games left in place, with why (being recorded, file in use...). */
+  failed: Array<{ id: string; error: string }>;
+}
+
 export interface ClipExportResult {
   ok: boolean;
   clip: Clip | null;
