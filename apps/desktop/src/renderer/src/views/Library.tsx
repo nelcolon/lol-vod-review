@@ -159,6 +159,10 @@ export function Library() {
       {picked.length > 0 && (
         <div className="lib-selection">
           <strong>{picked.length} selected</strong>
+          <span className="muted">
+            frees <strong className="lib-free">{formatBytes(picked.reduce((n, g) => n + g.sizeBytes, 0))}</strong> of{' '}
+            {formatBytes(games.reduce((n, g) => n + g.sizeBytes, 0))} used
+          </span>
           <button type="button" className="danger" onClick={() => setToDelete(picked)}>
             Delete selected
           </button>

@@ -1833,3 +1833,6 @@ table.games tbody tr.selected td {
   background: var(--bg-1);
   font-size: 12px;
 }
+.lib-free {
+  color: var(--fg);
+}
