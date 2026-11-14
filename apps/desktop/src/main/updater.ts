@@ -22,6 +22,19 @@ export class Updater {
       this.status = process.env['LVR_FAKE_UPDATE'] ? { ...this.status, state: 'available', latest: '9.9.9' } : { ...this.status, state: 'dev' };
       return;
     }
+    try {
+      this.wire();
+    } catch (e) {
+      // e.g. a version electron-updater can't parse: run without updates rather than not at all
+      console.warn(`[updater] disabled: ${e instanceof Error ? e.message : String(e)}`);
+      this.status = { ...this.status, state: 'error', error: 'updates unavailable in this build' };
+      return;
+    }
+    void this.check();
+    setInterval(() => void this.check(), CHECK_EVERY_MS).unref();
+  }
+
+  private wire(): void {
     autoUpdater.autoDownload = false;
     // A local test build (0.3.10-local.…, tools/try-local.mjs) would otherwise look for
     // prereleases on a "local" channel; only official releases exist, and they update over it.
@@ -37,8 +50,6 @@ export class Updater {
       // a failed download can be retried; a failed check just waits for the next one
       this.set({ state: this.status.latest && this.status.state === 'downloading' ? 'available' : 'error', error: e.message.split('\n')[0] ?? 'update failed' });
     });
-    void this.check();
-    setInterval(() => void this.check(), CHECK_EVERY_MS).unref();
   }
 
   get(): UpdateStatus {
@@ -46,7 +57,7 @@ export class Updater {
   }
 
   async check(): Promise<UpdateStatus> {
-    if (!app.isPackaged) return this.get();
+    if (!app.isPackaged || this.status.error === 'updates unavailable in this build') return this.get();
     if (this.status.state === 'downloading' || this.status.state === 'ready') return this.get();
     await autoUpdater.checkForUpdates().catch(() => undefined);
     return this.get();

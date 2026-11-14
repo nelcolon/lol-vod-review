@@ -5,7 +5,7 @@
 //   npm run try -- --quick skip typecheck/tests/smoke
 //   npm run try -- --force install even while League is running (stops a recording!)
 //
-// The build is versioned <next>-local.<time> (e.g. 0.3.10-local.1031.0452), so Settings shows it
+// The build is versioned <next>-local.<time> (e.g. 0.3.10-local.202610310452), so Settings shows it
 // is a test build and the next official release (0.3.10) still updates over it.
 import { execSync, spawn } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -47,7 +47,8 @@ if (out(`git tag -l v${version}`)) {
 }
 const d = new Date();
 const two = (n) => String(n).padStart(2, '0');
-const localVersion = `${base}-local.${two(d.getMonth() + 1)}${two(d.getDate())}.${two(d.getHours())}${two(d.getMinutes())}`;
+// one numeric identifier starting with the year: semver forbids leading zeros ("0133" broke the updater)
+const localVersion = `${base}-local.${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}${two(d.getHours())}${two(d.getMinutes())}`;
 console.log(`Local test build ${localVersion} (installed copy will be replaced)`);
 
 const t0 = Date.now();

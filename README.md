@@ -75,7 +75,7 @@ the installed app, in about 2–3 minutes and without GitHub:
 
 1. Typecheck, unit tests and the smoke test (the real app driven against the mock library).
    If any of them fails, nothing is installed.
-2. Builds the installer as `<next version>-local.<MMDD.HHMM>` (Settings → About & updates shows it).
+2. Builds the installer as `<next version>-local.<YYYYMMDDHHMM>` (Settings → About & updates shows it).
 3. Closes the app, installs silently into the same folder (recordings and settings are kept)
    and starts it.
 
