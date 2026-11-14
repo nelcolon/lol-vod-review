@@ -27,6 +27,13 @@ describe('planRetention', () => {
     expect(plan.overQuotaAfter).toBe(false);
   });
 
+  it('keeps games that have clips', () => {
+    const withClip = games.map((g) => (g.gameId === 'a' ? { ...g, hasClips: true } : g));
+    const plan = planRetention(withClip, 7 * GB);
+    expect(plan.deletions.map((d) => d.gameId)).toEqual(['c', 'd']);
+    expect(plan.exempt).toContainEqual({ gameId: 'a', reason: 'has clips' });
+  });
+
   it('stops as soon as usage fits, in insertion-independent order', () => {
     const shuffled = [games[3]!, games[0]!, games[2]!];
     const plan = planRetention(shuffled, 6 * GB);

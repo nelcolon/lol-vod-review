@@ -10,6 +10,8 @@ export interface RetentionGame {
   pinned: boolean;
   /** Sum of segment sizes (clips are stored separately and never counted). */
   sizeBytes: number;
+  /** Games with clips are kept (the clips point into their video). */
+  hasClips?: boolean;
   /** A game still being recorded/processed is never deleted. */
   status?: 'recording' | 'processing' | 'ready' | 'error' | (string & {});
 }
@@ -55,6 +57,10 @@ export function planRetention(games: readonly RetentionGame[], quotaBytes: numbe
     if (bytes <= target) break;
     if (g.pinned) {
       exempt.push({ gameId: g.gameId, reason: 'pinned' });
+      continue;
+    }
+    if (g.hasClips) {
+      exempt.push({ gameId: g.gameId, reason: 'has clips' });
       continue;
     }
     if (g.status === 'recording' || g.status === 'processing') {

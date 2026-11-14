@@ -308,6 +308,7 @@ export class GameStore {
       startedAt: g.started_at,
       pinned: g.pinned,
       sizeBytes: g.size_bytes,
+      hasClips: g.clip_count > 0,
       status: g.status,
     }));
   }

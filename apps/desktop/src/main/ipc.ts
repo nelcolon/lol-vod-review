@@ -1,12 +1,14 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import type { CauseTag, ChooseFolderResult, ClipExportResult, ClipPatch, DeleteGamesResult, Drawing, NoteInput, Settings } from '../shared/contracts';
 import { IPC } from '../shared/ipc';
 import type { Backend } from './backend';
 import { cutClip } from './clips';
+import { closeClipWindow, deleteGame } from './delete-game';
 import { clipsDir, ffmpegPath, recordingsDir } from './paths';
 import type { SettingsStore } from './settings';
+import type { Retention } from './retention';
 import type { Updater } from './updater';
 
 export interface IpcDeps {
@@ -15,6 +17,7 @@ export interface IpcDeps {
   getWindow: () => BrowserWindow | null;
   openClipWindow: (clipId: string) => void;
   updater: Updater;
+  retention: Retention;
 }
 
 function broadcastClipsChanged(gameId: string): void {
@@ -33,19 +36,6 @@ function cleanDrawings(v: unknown): Drawing[] {
   });
 }
 
-function closeClipWindow(clipId: string): void {
-  for (const w of BrowserWindow.getAllWindows()) if (w.webContents.getURL().endsWith(`#clip=${clipId}`)) w.close();
-}
-
-/**
- * Each game records into its own `<start time>_<game id>` folder right under a recordings folder;
- * only those get removed whole.
- */
-function isGameFolder(dir: string, roots: string[]): boolean {
-  const parent = resolve(dirname(dir)).toLowerCase();
-  return /^\d{4}-\d{2}-\d{2}T/.test(basename(dir)) && roots.some((r) => resolve(r).toLowerCase() === parent);
-}
-
 /** The folder new games go to. */
 function currentRecordingsDir(settings: SettingsStore): string {
   return settings.get().recordingsDir || recordingsDir();
@@ -59,29 +49,6 @@ function checkWritable(dir: string): void {
   rmSync(probe, { force: true });
 }
 
-// Retries ride out the media protocol still closing its read stream after the player let go.
-const RM = { recursive: true, force: true, maxRetries: 10, retryDelay: 200 } as const;
-
-async function deleteGame(backend: Backend, id: string): Promise<void> {
-  const files = await backend.gameFiles(id);
-  if (!files) throw new Error('game not found');
-  if (files.recording) throw new Error('it is being recorded right now');
-  for (const video of files.videos) {
-    try {
-      rmSync(video, RM);
-    } catch {
-      throw new Error(`the video is in use: ${video}`);
-    }
-  }
-  const roots = backend.recordingRoots();
-  for (const dir of new Set(files.videos.map((v) => dirname(v)))) if (isGameFolder(dir, roots)) rmSync(dir, RM);
-  for (const clip of files.clips) {
-    rmSync(clip.path, RM);
-    closeClipWindow(clip.id);
-  }
-  await backend.deleteGame(id);
-}
-
 function assertString(v: unknown, name: string): string {
   if (typeof v !== 'string' || !v) throw new Error(`${name} must be a non-empty string`);
   return v;
@@ -91,7 +58,9 @@ function assertNumber(v: unknown, name: string): number {
   return v;
 }
 
-export function registerIpc({ backend, settings, getWindow, openClipWindow, updater }: IpcDeps): void {
+export function registerIpc({ backend, settings, getWindow, openClipWindow, updater, retention }: IpcDeps): void {
+  ipcMain.handle(IPC.getStorageUsage, () => retention.usage());
+  ipcMain.handle(IPC.applyRetention, () => retention.run());
   ipcMain.handle(IPC.getUpdateStatus, () => updater.get());
   ipcMain.handle(IPC.checkForUpdate, () => updater.check());
   ipcMain.handle(IPC.downloadUpdate, () => updater.download());

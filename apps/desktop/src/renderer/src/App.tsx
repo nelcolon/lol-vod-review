@@ -20,6 +20,10 @@ export function App() {
     const offStatus = window.lvr.onRecorderStatus((r) => useStore.getState().setRecorder(r));
     const offSettings = window.lvr.onSettingsChanged((s) => useStore.getState().setSettingsFromPush(s));
     const offNav = window.lvr.onNavigate((r) => useStore.getState().navigate(r));
+    const offNotice = window.lvr.onNotice((text) => {
+      useStore.getState().showToast(text);
+      if (useStore.getState().route.view === 'library') void useStore.getState().loadGames();
+    });
     const offClips = window.lvr.onClipsChanged((gameId) => {
       if (useStore.getState().bundle?.game.id === gameId) void useStore.getState().refreshBundle();
     });
@@ -27,6 +31,7 @@ export function App() {
       offStatus();
       offSettings();
       offNav();
+      offNotice();
       offClips();
     };
   }, []);

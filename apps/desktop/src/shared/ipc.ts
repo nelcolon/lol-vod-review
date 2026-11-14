@@ -12,6 +12,8 @@ import type {
   Note,
   NoteInput,
   RecorderStatus,
+  RetentionResult,
+  StorageUsage,
   UpdateStatus,
   Settings,
 } from './contracts';
@@ -35,6 +37,8 @@ export const IPC = {
   deleteGames: 'lvr:deleteGames',
   chooseRecordingsDir: 'lvr:chooseRecordingsDir',
   openRecordingsDir: 'lvr:openRecordingsDir',
+  getStorageUsage: 'lvr:getStorageUsage',
+  applyRetention: 'lvr:applyRetention',
   getSettings: 'lvr:getSettings',
   setSettings: 'lvr:setSettings',
   getRecorderStatus: 'lvr:getRecorderStatus',
@@ -48,6 +52,7 @@ export const IPC = {
   navigate: 'lvr:ev:navigate',
   clipsChanged: 'lvr:ev:clipsChanged',
   updateStatus: 'lvr:ev:updateStatus',
+  notice: 'lvr:ev:notice',
 } as const;
 
 /** The API exposed on `window.lvr` by the preload script. */
@@ -76,6 +81,11 @@ export interface LvrApi {
   /** Folder picker for new recordings; saves the choice when the folder is writable. */
   chooseRecordingsDir(): Promise<ChooseFolderResult>;
   openRecordingsDir(): Promise<void>;
+  getStorageUsage(): Promise<StorageUsage>;
+  /** Deletes the oldest games until the recordings fit the storage quota. */
+  applyRetention(): Promise<RetentionResult>;
+  /** Messages from the main process to show as a toast (e.g. old games deleted for the quota). */
+  onNotice(cb: (text: string) => void): () => void;
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;
   getRecorderStatus(): Promise<RecorderStatus>;

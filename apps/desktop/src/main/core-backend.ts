@@ -27,6 +27,7 @@ import {
   type PlayerListSnapshot,
   type PlayerSnapshot,
   type RecordingSettings,
+  type RetentionGame,
   type SegmentRef,
   type Team,
 } from '@lvr/core';
@@ -801,6 +802,10 @@ export class CoreBackend implements Backend {
       clips: detail.clips.map(mapClip),
       recording: this.live?.rowId === detail.game.id,
     };
+  }
+
+  async retentionCandidates(): Promise<RetentionGame[]> {
+    return this.store.retentionCandidates();
   }
 
   async deleteGame(id: string): Promise<void> {

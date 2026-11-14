@@ -1,3 +1,4 @@
+import type { RetentionGame } from '@lvr/core';
 import type {
   CauseTag,
   Clip,
@@ -55,6 +56,8 @@ export interface Backend {
 
   /** Video files and clips of a game, for the caller to reveal or delete; null if unknown. */
   gameFiles(id: string): Promise<GameFiles | null>;
+  /** Every stored game with its size, for the storage quota. */
+  retentionCandidates(): Promise<RetentionGame[]>;
   /** Removes the game's rows (notes, moments, clips...). The caller deletes the files first. */
   deleteGame(id: string): Promise<void>;
 

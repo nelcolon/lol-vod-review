@@ -5,6 +5,7 @@ import { installMediaProtocol, registerMediaScheme } from './media-protocol';
 import { CoreBackend } from './core-backend';
 import { MockBackend } from './mock-backend';
 import { registerIpc } from './ipc';
+import { Retention } from './retention';
 import { Updater } from './updater';
 import { clipsDir, dbPath, devAssetsDir, mockStatePath, ddragonDir, recorderPath, recordingsDir, sampleVideoPath, settingsPath } from './paths';
 import { SettingsStore } from './settings';
@@ -81,8 +82,17 @@ async function main(): Promise<void> {
       quitting = true;
     },
   });
-  registerIpc({ backend, settings, getWindow: () => mainWindow, openClipWindow, updater });
+  const retention = new Retention({ backend, settings, notify: (text) => mainWindow?.webContents.send(IPC.notice, text) });
+  registerIpc({ backend, settings, getWindow: () => mainWindow, openClipWindow, updater, retention });
   updater.start();
+
+  // Storage quota: shortly after start, and after every game once the recorder is idle again.
+  setTimeout(() => void retention.run(), 30_000).unref();
+  let lastState = backend.getRecorderStatus().state;
+  backend.onRecorderStatus((s) => {
+    if (lastState !== 'idle' && s.state === 'idle') setTimeout(() => void retention.run(), 10_000).unref();
+    lastState = s.state;
+  });
 
   createWindow(settings);
   if (!startHidden) showWindow();

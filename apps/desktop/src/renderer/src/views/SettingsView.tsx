@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import type { BitratePreset, UpdateStatus } from '@shared/contracts';
+import { useCallback, useEffect, useState } from 'react';
+import type { BitratePreset, StorageUsage, UpdateStatus } from '@shared/contracts';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { formatBytes } from '../lib/format';
 import { BITRATE_PRESETS, RECORDABLE_QUEUES } from '@shared/contracts';
 import { useUpdate } from '../lib/useUpdate';
 import { useStore } from '../store';
@@ -41,8 +43,9 @@ export function SettingsView() {
           <span className="inline">
             <input type="number" min={5} max={2000} step={5} value={settings.quotaGb} onChange={(e) => void update({ quotaGb: Number(e.target.value) })} /> GB
           </span>
-          <span className="muted small">Oldest unpinned games are deleted first; clips and pinned games are exempt.</span>
+          <span className="muted small">When recordings take more than this, the oldest games are deleted after each game. Games with clips are kept.</span>
         </label>
+        <StorageUsageRow quotaGb={settings.quotaGb} />
         <RecordingsFolder />
         <label className="row">
           Jump to this long before a moment
@@ -109,6 +112,58 @@ export function SettingsView() {
       </fieldset>
       <UpdateSection />
     </section>
+  );
+}
+
+/** How much the recordings take now, and what the quota would delete; "Delete now" asks first. */
+function StorageUsageRow({ quotaGb }: { quotaGb: number }) {
+  const [usage, setUsage] = useState<StorageUsage | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const showToast = useStore((s) => s.showToast);
+  const refresh = useCallback(() => void window.lvr.getStorageUsage().then(setUsage), []);
+  useEffect(() => {
+    // quota typed in the box: wait until the typing stops
+    const t = setTimeout(refresh, 400);
+    return () => clearTimeout(t);
+  }, [quotaGb, refresh]);
+  if (!usage) return null;
+  const over = usage.deleteCount > 0;
+  const apply = async () => {
+    setBusy(true);
+    const r = await window.lvr.applyRetention();
+    setBusy(false);
+    setConfirm(false);
+    if (!r.deleted) showToast(r.failed ? `Nothing deleted: ${r.failed} games are in use` : 'Nothing to delete', r.failed ? 'error' : 'info');
+    refresh();
+  };
+  return (
+    <div className="row">
+      <span className="muted small">
+        Recordings use <strong className={over ? 'error' : ''}>{formatBytes(usage.usedBytes)}</strong> of {formatBytes(usage.quotaBytes)}.
+        {over && ` Over the quota: the ${usage.deleteCount} oldest games (${formatBytes(usage.deleteBytes)}) are deleted after your next game.`}
+        {usage.keptCount > 0 && ` ${usage.keptCount} games with clips are kept.`}
+      </span>
+      {over && (
+        <button type="button" className="danger" onClick={() => setConfirm(true)}>
+          Delete now
+        </button>
+      )}
+      {confirm && (
+        <ConfirmDialog
+          title={`Delete ${usage.deleteCount} old games?`}
+          confirmLabel={`Delete ${usage.deleteCount} games`}
+          busy={busy}
+          onConfirm={() => void apply()}
+          onCancel={() => setConfirm(false)}
+        >
+          <p>
+            The {usage.deleteCount} oldest games ({formatBytes(usage.deleteBytes)}) are removed with their notes, so the recordings fit your{' '}
+            {quotaGb} GB quota. Games with clips are kept. This can't be undone.
+          </p>
+        </ConfirmDialog>
+      )}
+    </div>
   );
 }
 

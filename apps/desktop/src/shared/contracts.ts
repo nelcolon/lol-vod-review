@@ -452,6 +452,22 @@ export interface GameBundle {
   clips: Clip[];
 }
 
+export interface StorageUsage {
+  usedBytes: number;
+  quotaBytes: number;
+  /** What enforcing the quota now would delete (oldest first). */
+  deleteCount: number;
+  deleteBytes: number;
+  /** Over quota but kept because they have clips or are being recorded. */
+  keptCount: number;
+}
+
+export interface RetentionResult {
+  deleted: number;
+  freedBytes: number;
+  failed: number;
+}
+
 export interface ChooseFolderResult {
   settings: Settings;
   /** Set when the picked folder can't be written to (settings unchanged). */
