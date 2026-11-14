@@ -64,7 +64,8 @@ in Settings → Recordings folder (for example a bigger drive). A new folder app
 game; games already recorded stay where they are and keep working.
 
 **Storage quota** (Settings, 50 GB by default): when the recordings take more, the oldest games
-are deleted after each game and when the app starts, until they fit. Games with clips are kept.
+are deleted after each game and when the app starts, until they fit. Games with clips, notes or
+bookmarks are kept.
 Settings shows how much the recordings use and has **Delete now** (it asks first).
 
 ## Trying changes before a release

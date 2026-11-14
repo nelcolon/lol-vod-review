@@ -43,7 +43,7 @@ export function SettingsView() {
           <span className="inline">
             <input type="number" min={5} max={2000} step={5} value={settings.quotaGb} onChange={(e) => void update({ quotaGb: Number(e.target.value) })} /> GB
           </span>
-          <span className="muted small">When recordings take more than this, the oldest games are deleted after each game. Games with clips are kept.</span>
+          <span className="muted small">When recordings take more than this, the oldest games are deleted after each game. Games with clips or notes are kept.</span>
         </label>
         <StorageUsageRow quotaGb={settings.quotaGb} />
         <RecordingsFolder />
@@ -142,7 +142,7 @@ function StorageUsageRow({ quotaGb }: { quotaGb: number }) {
       <span className="muted small">
         Recordings use <strong className={over ? 'error' : ''}>{formatBytes(usage.usedBytes)}</strong> of {formatBytes(usage.quotaBytes)}.
         {over && ` Over the quota: the ${usage.deleteCount} oldest games (${formatBytes(usage.deleteBytes)}) are deleted after your next game.`}
-        {usage.keptCount > 0 && ` ${usage.keptCount} games with clips are kept.`}
+        {usage.keptCount > 0 && ` ${usage.keptCount} games with clips or notes are kept.`}
       </span>
       {over && (
         <button type="button" className="danger" onClick={() => setConfirm(true)}>
@@ -159,7 +159,7 @@ function StorageUsageRow({ quotaGb }: { quotaGb: number }) {
         >
           <p>
             The {usage.deleteCount} oldest games ({formatBytes(usage.deleteBytes)}) are removed with their notes, so the recordings fit your{' '}
-            {quotaGb} GB quota. Games with clips are kept. This can't be undone.
+            {quotaGb} GB quota. Games with clips or notes are kept. This can't be undone.
           </p>
         </ConfirmDialog>
       )}

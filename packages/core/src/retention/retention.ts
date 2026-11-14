@@ -1,6 +1,6 @@
 /**
- * Retention (PLAN §3.9): quota in bytes, oldest unpinned games deleted first, clips and
- * pinned games exempt, pre-game free-space check.
+ * Retention (PLAN §3.9): quota in bytes, oldest unpinned games deleted first; games that are
+ * pinned or have clips or notes are exempt; pre-game free-space check.
  */
 
 export interface RetentionGame {
@@ -12,6 +12,8 @@ export interface RetentionGame {
   sizeBytes: number;
   /** Games with clips are kept (the clips point into their video). */
   hasClips?: boolean;
+  /** Games with notes or bookmarks are kept (the user reviewed them). */
+  hasNotes?: boolean;
   /** A game still being recorded/processed is never deleted. */
   status?: 'recording' | 'processing' | 'ready' | 'error' | (string & {});
 }
@@ -61,6 +63,10 @@ export function planRetention(games: readonly RetentionGame[], quotaBytes: numbe
     }
     if (g.hasClips) {
       exempt.push({ gameId: g.gameId, reason: 'has clips' });
+      continue;
+    }
+    if (g.hasNotes) {
+      exempt.push({ gameId: g.gameId, reason: 'has notes' });
       continue;
     }
     if (g.status === 'recording' || g.status === 'processing') {

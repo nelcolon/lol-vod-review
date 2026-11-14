@@ -1,6 +1,6 @@
 /**
  * Storage quota: once the recordings take more than Settings → Storage quota, the oldest games
- * are deleted (games with clips, and the one being recorded, are kept). Runs when the app
+ * are deleted (games with clips or notes, and the one being recorded, are kept). Runs when the app
  * starts and after each game, never while you type a new quota, and on demand from Settings.
  */
 import { planRetention } from '@lvr/core';

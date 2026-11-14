@@ -34,6 +34,13 @@ describe('planRetention', () => {
     expect(plan.exempt).toContainEqual({ gameId: 'a', reason: 'has clips' });
   });
 
+  it('keeps games that have notes', () => {
+    const noted = games.map((g) => (g.gameId === 'c' ? { ...g, hasNotes: true } : g));
+    const plan = planRetention(noted, 7 * GB);
+    expect(plan.deletions.map((d) => d.gameId)).toEqual(['a', 'd']);
+    expect(plan.exempt).toContainEqual({ gameId: 'c', reason: 'has notes' });
+  });
+
   it('stops as soon as usage fits, in insertion-independent order', () => {
     const shuffled = [games[3]!, games[0]!, games[2]!];
     const plan = planRetention(shuffled, 6 * GB);

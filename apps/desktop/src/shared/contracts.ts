@@ -458,7 +458,7 @@ export interface StorageUsage {
   /** What enforcing the quota now would delete (oldest first). */
   deleteCount: number;
   deleteBytes: number;
-  /** Over quota but kept because they have clips or are being recorded. */
+  /** Over quota but kept because they have clips or notes, or are being recorded. */
   keptCount: number;
 }
 

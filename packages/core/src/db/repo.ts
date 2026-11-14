@@ -303,12 +303,14 @@ export class GameStore {
 
   /** Input for `planRetention`. */
   retentionCandidates(): RetentionGame[] {
+    const noted = new Set((this.db.prepare('SELECT DISTINCT game_id FROM notes').all() as Array<{ game_id: number }>).map((r) => r.game_id));
     return this.listGames({ limit: 100_000 }).map((g) => ({
       gameId: String(g.id),
       startedAt: g.started_at,
       pinned: g.pinned,
       sizeBytes: g.size_bytes,
       hasClips: g.clip_count > 0,
+      hasNotes: noted.has(g.id),
       status: g.status,
     }));
   }
